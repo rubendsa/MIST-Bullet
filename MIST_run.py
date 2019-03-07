@@ -73,13 +73,39 @@ simDelay = 1./1000.
 for i in range (simTime): #Time to run simulation
     p.stepSimulation()
     time.sleep(simDelay)
-    cycleEverything(i, simTime)
+    # cycleEverything(i, simTime)
 
     # p.applyExternalForce(robotId, 
     #                 0, 
-    #                 [0,0, 100],
-    #                 [0,.25,0],
+    #                 [0,0, 300],
+    #                 [0,-.28,0],
     #                 1)
+
+    # p.applyExternalForce(robotId, 
+    #                 1, 
+    #                 [0,0, 300],
+    #                 [0,-.28,0],
+    #                 1)
+
+    # p.applyExternalForce(robotId, 
+    #                 2, 
+    #                 [0,0, 300],
+    #                 [0,-.28,0],
+    #                 1)
+    
+    # p.applyExternalForce(robotId, 
+    #                 3, 
+    #                 [0,0, 300],
+    #                 [0,-.28,0],
+    #                 1)
+
+
+    # p.applyExternalForce(robotId, 
+    #                 -1, 
+    #                 [0,0, 2000],
+    #                 [0,.85,0],
+    #                 1)
+                    
     
     # print("sin:", np.sin(i))
 
