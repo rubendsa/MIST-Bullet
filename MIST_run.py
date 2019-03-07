@@ -21,29 +21,32 @@ robotId = p.loadURDF("MIST.urdf",robotStartPos, robotStartOrientation)
 #     print(p.getLinkInfo(robotId, linkIndex=i))
 
 # hingeVelocity = 500 # Multi-rotor
-hingeVelocity = 500 # Fixed-wing
+# hingeVelocity = 500 # Fixed-wing
+hingePosition = 1.57
 
+
+p.setJointMotorControl2(robotId,
+                    jointIndex=0,
+                    controlMode=p.POSITION_CONTROL,
+                    targetPosition=hingePosition,
+                    force=1000)
+p.setJointMotorControl2(robotId,
+                    jointIndex=1,
+                    controlMode=p.POSITION_CONTROL,
+                    targetPosition=hingePosition,
+                    force=1000)
+p.setJointMotorControl2(robotId,
+                    jointIndex=2,
+                    controlMode=p.POSITION_CONTROL,
+                    targetPosition=hingePosition,
+                    force=1000)
 
 for i in range (10000): #Time to run simulation
     p.stepSimulation()
-    time.sleep(1./100.)
+    time.sleep(1./1000.)
     p.applyExternalForce(robotId, 
                     0, 
                     [0,0, 100],
                     [0,.25,0],
                     1)
-    p.setJointMotorControl2(robotId,
-                        jointIndex=0,
-                        controlMode=p.VELOCITY_CONTROL,
-                        targetVelocity=hingeVelocity,
-                        force=50)
-    p.setJointMotorControl2(robotId,
-                        jointIndex=1,
-                        controlMode=p.VELOCITY_CONTROL,
-                        targetVelocity=hingeVelocity,
-                        force=50)
-    p.setJointMotorControl2(robotId,
-                        jointIndex=2,
-                        controlMode=p.VELOCITY_CONTROL,
-                        targetVelocity=hingeVelocity,
-                        force=50)
+

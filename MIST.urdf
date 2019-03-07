@@ -16,7 +16,7 @@
     </visual>
     
     <collision name='link0_collision'>
-        <origin rpy="0 0 0" xyz="0 0 -.15 "/>
+        <origin rpy="0 0 0" xyz="0 0 -.2 "/>
         <geometry>
             <box size="0.7 0.7 0.1"/>
         </geometry>
@@ -42,7 +42,7 @@
     </visual>
     
     <collision name='link1_collision'>
-        <origin rpy="0 0 0" xyz="0 0 -.15 "/>
+        <origin rpy="0 0 0" xyz="0 0 -.2 "/>
 
         <geometry>
             <box size="0.7 0.7 0.1"/>
@@ -67,7 +67,7 @@
     </visual>
     
     <collision name='link2_collision'>
-        <origin rpy="0 0 0" xyz="0 0 -.15 "/>
+        <origin rpy="0 0 0" xyz="0 0 -.2 "/>
 
         <geometry>
             <box size="0.7 0.7 0.1"/>
@@ -91,7 +91,7 @@
     </visual>
     
     <collision name='link3_collision'>
-        <origin rpy="0 0 0" xyz="0 0 -.15 "/>
+        <origin rpy="0 0 0" xyz="0 0 -.2 "/>
 
         <geometry>
             <box size="0.7 0.7 0.1"/>
@@ -110,7 +110,7 @@
     <parent link="link1"/>
     <child link="link0"/>
     <origin rpy="0 0 0" xyz="0 .58 0"/>
-    <limit effort="10" velocity="10" lower="0" upper="1.57079632679"/>
+    <limit effort="1" velocity="1" lower="0" upper="1.57079632679"/>
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
@@ -119,7 +119,7 @@
     <parent link="link2"/>
     <child link="link1"/>
     <origin rpy="0 0 0" xyz="0 .58 0"/>
-    <limit effort="10" velocity="10" lower="0" upper="1.57079632679"/>
+    <limit effort="1" velocity="1" lower="0" upper="1.57079632679"/>
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
@@ -128,7 +128,7 @@
     <parent link="link3"/>
     <child link="link2"/>
     <origin rpy="0 0 0" xyz="0 .58 0"/>
-    <limit effort="10" velocity="10" lower="0" upper="1.57079632679"/>
+    <limit effort="1" velocity="1" lower="0" upper="1.57079632679"/>
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
