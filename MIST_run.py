@@ -47,12 +47,40 @@ p.setJointMotorControl2(robotId,
                     targetPosition=0,
                     force=1000)
 
-for i in range (10000): #Time to run simulation
+
+def cycleEverything(i, simTime):
+    hingePosition = 1.57*np.sin((i*300/simTime))
+    # hingePosition = np.linspace(0, 1.57, )
+
+    for hingeNum in range(0,3):
+        p.setJointMotorControl2(robotId,
+                    jointIndex=hingeNum,
+                    controlMode=p.POSITION_CONTROL,
+                    targetPosition=hingePosition,
+                    force=1000)
+    
+    for ctrlSurfNum in range(3,7):
+        p.setJointMotorControl2(robotId,
+                    jointIndex=ctrlSurfNum,
+                    controlMode=p.POSITION_CONTROL,
+                    targetPosition=-(hingePosition+ctrlSurfNum/4.)*3,
+                    force=1000)
+    print("hingeposition", hingePosition)
+
+simTime = 10000
+simDelay = 1./1000.
+
+for i in range (simTime): #Time to run simulation
     p.stepSimulation()
-    time.sleep(1./1000.)
-    p.applyExternalForce(robotId, 
-                    0, 
-                    [0,0, 100],
-                    [0,.25,0],
-                    1)
+    time.sleep(simDelay)
+    cycleEverything(i, simTime)
+
+    # p.applyExternalForce(robotId, 
+    #                 0, 
+    #                 [0,0, 100],
+    #                 [0,.25,0],
+    #                 1)
+    
+    # print("sin:", np.sin(i))
+
 
