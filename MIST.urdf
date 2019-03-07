@@ -64,6 +64,10 @@
         <geometry>
             <mesh filename="package://meshes/mist_mainwing.STL" scale="0.001 0.001 0.001"/>
         </geometry>
+      
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
     </visual>
     
     <collision name='link2_collision'>
@@ -88,6 +92,10 @@
         <geometry>
             <mesh filename="package://meshes/mist_mainwing.STL" scale="0.001 0.001 0.001"/>
         </geometry>
+
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
     </visual>
     
     <collision name='link3_collision'>
@@ -129,6 +137,123 @@
     <child link="link2"/>
     <origin rpy="0 0 0" xyz="0 .58 0"/>
     <limit effort="1" velocity="1" lower="0" upper="1.57079632679"/>
+    <joint_properties damping="1.0" friction="0.0"/>
+  </joint>
+
+
+
+
+
+<!--                              control surface 0                       -->
+  <link name="ctrlsurf0">
+    <visual name='ctrlsurf0_visual'>
+        <origin rpy="0 0 0" xyz="0.0 .28 -.05"/>
+
+        <geometry>
+            <mesh filename="package://meshes/mist_controlsurface.STL" scale="0.001 0.001 0.001"/>
+        </geometry>
+      <material name="white">
+        <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+    
+    <inertial>
+      <mass value="20"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+
+  <!--                              control surface 1                       -->
+  <link name="ctrlsurf1">
+    <visual name='ctrlsurf1_visual'>
+        <origin rpy="0 0 0" xyz="0.0 .28 -.05"/>
+
+        <geometry>
+            <mesh filename="package://meshes/mist_controlsurface.STL" scale="0.001 0.001 0.001"/>
+        </geometry>
+      <material name="white">
+      </material>
+    </visual>
+    
+    <inertial>
+      <mass value="20"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+
+  <!--                              control surface 2                       -->
+  <link name="ctrlsurf2">
+    <visual name='ctrlsurf2_visual'>
+        <origin rpy="0 0 0" xyz="0.0 .28 -.05"/>
+
+        <geometry>
+            <mesh filename="package://meshes/mist_controlsurface.STL" scale="0.001 0.001 0.001"/>
+        </geometry>
+      <material name="white">
+      </material>
+    </visual>
+    
+    <inertial>
+      <mass value="20"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+
+  <!--                              control surface 3                       -->
+  <link name="ctrlsurf3">
+    <visual name='ctrlsurf3_visual'>
+        <origin rpy="0 0 0" xyz="0.0 .28 -.05"/>
+
+        <geometry>
+            <mesh filename="package://meshes/mist_controlsurface.STL" scale="0.001 0.001 0.001"/>
+        </geometry>
+      <material name="white">
+      </material>
+    </visual>
+    
+    <inertial>
+      <mass value="20"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+  <joint name="link0_ctrlsurf0" type="revolute">
+    <axis xyz="0 1 0"/>
+    <parent link="link0"/>
+    <child link="ctrlsurf0"/>
+    <origin rpy="0 0 0" xyz="-.003 0 -.08"/>
+    <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/>
+    <joint_properties damping="1.0" friction="0.0"/>
+  </joint>
+
+  <joint name="link1_ctrlsurf1" type="revolute">
+    <axis xyz="0 1 0"/>
+    <parent link="link1"/>
+    <child link="ctrlsurf1"/>
+    <origin rpy="0 0 0" xyz="-.003 0 -.08"/>
+    <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/>
+    <joint_properties damping="1.0" friction="0.0"/>
+  </joint>
+
+
+  <joint name="link2_ctrlsurf2" type="revolute">
+    <axis xyz="0 1 0"/>
+    <parent link="link2"/>
+    <child link="ctrlsurf2"/>
+    <origin rpy="0 0 0" xyz="-.003 0 -.08"/>
+    <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/>
+    <joint_properties damping="1.0" friction="0.0"/>
+  </joint>
+
+  <joint name="link3_ctrlsurf3" type="revolute">
+    <axis xyz="0 1 0"/>
+    <parent link="link3"/>
+    <child link="ctrlsurf3"/>
+    <origin rpy="0 0 0" xyz="-.003 0 -.08"/>
+    <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/>
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 

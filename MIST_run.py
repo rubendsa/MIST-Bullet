@@ -41,6 +41,12 @@ p.setJointMotorControl2(robotId,
                     targetPosition=hingePosition,
                     force=1000)
 
+p.setJointMotorControl2(robotId,
+                    jointIndex=3,
+                    controlMode=p.POSITION_CONTROL,
+                    targetPosition=0,
+                    force=1000)
+
 for i in range (10000): #Time to run simulation
     p.stepSimulation()
     time.sleep(1./1000.)
