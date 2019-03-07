@@ -5,10 +5,10 @@
  <!--                                  LINK 0                                   -->
   <link name="link0">
     <visual name='link0_visual'>
-        <origin rpy="0 -1.57 0" xyz="0.0 .25 0"/>
+        <origin rpy="0 0 0" xyz="0.0 .28 0"/>
 
         <geometry>
-            <mesh filename="package://meshes/single_segment.STL" scale="0.001 0.001 0.001"/>
+            <mesh filename="package://meshes/mist_mainwing.STL" scale="0.001 0.001 0.001"/>
         </geometry>
       <material name="white">
         <color rgba="1 1 1 1"/>
@@ -16,8 +16,7 @@
     </visual>
     
     <collision name='link0_collision'>
-        <origin rpy="0 0 0" xyz="0 0 0 "/>
-
+        <origin rpy="0 0 0" xyz="0 0 -.15 "/>
         <geometry>
             <box size="0.7 0.7 0.1"/>
         </geometry>
@@ -31,10 +30,10 @@
  <!--                                  LINK 1                                   -->
  <link name="link1">
     <visual name='link1_visual'>
-        <origin rpy="0 -1.57 0" xyz="0.0 .25 0"/>
+        <origin rpy="0 0 0" xyz="0.0 .28 0"/>
 
         <geometry>
-            <mesh filename="package://meshes/single_segment.STL" scale="0.001 0.001 0.001"/>
+            <mesh filename="package://meshes/mist_mainwing.STL" scale="0.001 0.001 0.001"/>
         </geometry>
 
       <material name="blue">
@@ -43,7 +42,7 @@
     </visual>
     
     <collision name='link1_collision'>
-        <origin rpy="0 0 0" xyz="0 0 0 "/>
+        <origin rpy="0 0 0" xyz="0 0 -.15 "/>
 
         <geometry>
             <box size="0.7 0.7 0.1"/>
@@ -60,15 +59,15 @@
    <!--                                  LINK 2                                  -->
  <link name="link2">
     <visual name='link2_visual'>
-        <origin rpy="0 -1.57 0" xyz="0.0 .25 0"/>
+        <origin rpy="0 0 0" xyz="0.0 .28 0"/>
 
         <geometry>
-            <mesh filename="package://meshes/single_segment.STL" scale="0.001 0.001 0.001"/>
+            <mesh filename="package://meshes/mist_mainwing.STL" scale="0.001 0.001 0.001"/>
         </geometry>
     </visual>
     
     <collision name='link2_collision'>
-        <origin rpy="0 0 0" xyz="0 0 0 "/>
+        <origin rpy="0 0 0" xyz="0 0 -.15 "/>
 
         <geometry>
             <box size="0.7 0.7 0.1"/>
@@ -84,15 +83,15 @@
      <!--                                  LINK 3                                  -->
  <link name="link3">
     <visual name='link3_visual'>
-        <origin rpy="0 -1.57 0" xyz="0.0 .25 0"/>
+        <origin rpy="0 0 0" xyz="0.0 .28 0"/>
 
         <geometry>
-            <mesh filename="package://meshes/single_segment.STL" scale="0.001 0.001 0.001"/>
+            <mesh filename="package://meshes/mist_mainwing.STL" scale="0.001 0.001 0.001"/>
         </geometry>
     </visual>
     
     <collision name='link3_collision'>
-        <origin rpy="0 0 0" xyz="0 0 0 "/>
+        <origin rpy="0 0 0" xyz="0 0 -.15 "/>
 
         <geometry>
             <box size="0.7 0.7 0.1"/>
@@ -110,27 +109,27 @@
     <axis xyz="0 0 1"/>
     <parent link="link1"/>
     <child link="link0"/>
-    <origin rpy="0 0 0" xyz="0 .55 0"/>
-    <limit effort="100" velocity="100" lower="0" upper="1.57"/>
-    <joint_properties damping="0.0" friction="0.0"/>
+    <origin rpy="0 0 0" xyz="0 .58 0"/>
+    <limit effort="10" velocity="10" lower="0" upper="1.57079632679"/>
+    <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
       <joint name="h1_joint" type="revolute">
     <axis xyz="0 0 1"/>
     <parent link="link2"/>
     <child link="link1"/>
-    <origin rpy="0 0 0" xyz="0 .55 0"/>
-    <limit effort="100" velocity="100" lower="0" upper="1.57"/>
-    <joint_properties damping="0.0" friction="0.0"/>
+    <origin rpy="0 0 0" xyz="0 .58 0"/>
+    <limit effort="10" velocity="10" lower="0" upper="1.57079632679"/>
+    <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
         <joint name="h2_joint" type="revolute">
     <axis xyz="0 0 1"/>
     <parent link="link3"/>
     <child link="link2"/>
-    <origin rpy="0 0 0" xyz="0 .55 0"/>
-    <limit effort="100" velocity="100" lower="0" upper="1.57"/>
-    <joint_properties damping="0.0" friction="0.0"/>
+    <origin rpy="0 0 0" xyz="0 .58 0"/>
+    <limit effort="10" velocity="10" lower="0" upper="1.57079632679"/>
+    <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
 

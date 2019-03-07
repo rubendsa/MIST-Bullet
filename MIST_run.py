@@ -21,7 +21,7 @@ robotId = p.loadURDF("MIST.urdf",robotStartPos, robotStartOrientation)
 #     print(p.getLinkInfo(robotId, linkIndex=i))
 
 # hingeVelocity = 500 # Multi-rotor
-hingeVelocity = -500 # Fixed-wing
+hingeVelocity = 500 # Fixed-wing
 
 
 for i in range (10000): #Time to run simulation
@@ -36,14 +36,14 @@ for i in range (10000): #Time to run simulation
                         jointIndex=0,
                         controlMode=p.VELOCITY_CONTROL,
                         targetVelocity=hingeVelocity,
-                        force=500)
+                        force=50)
     p.setJointMotorControl2(robotId,
                         jointIndex=1,
                         controlMode=p.VELOCITY_CONTROL,
                         targetVelocity=hingeVelocity,
-                        force=500)
+                        force=50)
     p.setJointMotorControl2(robotId,
                         jointIndex=2,
                         controlMode=p.VELOCITY_CONTROL,
                         targetVelocity=hingeVelocity,
-                        force=500)
+                        force=50)
