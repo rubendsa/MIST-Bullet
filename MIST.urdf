@@ -260,7 +260,7 @@
 <!--                               Propeller 0                             -->
 <link name="prop0">
     <visual name='prop0_visual'>
-        <origin rpy="0 0 0" xyz="0.0 .28 -.05"/>
+        <origin rpy="0 0 0" xyz="0.0 0 -.05"/>
 
         <geometry>
             <mesh filename="package://meshes/propeller_ccw.dae" scale="0.1 0.1 0.1"/>
@@ -278,7 +278,7 @@
 <!--                               Propeller 1                             -->
 <link name="prop1">
     <visual name='prop1_visual'>
-        <origin rpy="0 0 0" xyz="0.0 .28 -.05"/>
+        <origin rpy="0 0 0" xyz="0.0 0 -.05"/>
 
         <geometry>
             <mesh filename="package://meshes/propeller_ccw.dae" scale="0.1 0.1 0.1"/>
@@ -297,7 +297,7 @@
   <!--                               Propeller 2                             -->
 <link name="prop2">
     <visual name='prop2_visual'>
-        <origin rpy="0 0 0" xyz="0.0 .28 -.05"/>
+        <origin rpy="0 0 0" xyz="0.0 0 -.05"/>
 
         <geometry>
             <mesh filename="package://meshes/propeller_ccw.dae" scale="0.1 0.1 0.1"/>
@@ -317,7 +317,7 @@
   <!--                               Propeller 3                             -->
 <link name="prop3">
     <visual name='prop3_visual'>
-        <origin rpy="0 0 0" xyz="0.0 .28 -.05"/>
+        <origin rpy="0 0 0" xyz="0.0 0 -.05"/>
 
         <geometry>
             <mesh filename="package://meshes/propeller_ccw.dae" scale="0.1 0.1 0.1"/>
@@ -338,8 +338,8 @@
     <axis xyz="0 0 1"/>
     <parent link="link0"/>
     <child link="prop0"/>
-    <origin rpy="0 0 0" xyz="-.003 0 .185"/>
-    <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/>
+    <origin rpy="0 0 0" xyz="-.003 .28 .185"/>
+    <!-- <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/> -->
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
@@ -347,8 +347,8 @@
     <axis xyz="0 0 1"/>
     <parent link="link1"/>
     <child link="prop1"/>
-    <origin rpy="0 0 0" xyz="-.003 0 .185"/>
-    <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/>
+    <origin rpy="0 0 0" xyz="-.003 .28 .185"/>
+    <!-- <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/> -->
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
@@ -356,8 +356,8 @@
     <axis xyz="0 0 1"/>
     <parent link="link2"/>
     <child link="prop2"/>
-    <origin rpy="0 0 0" xyz="-.003 0 .185"/>
-    <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/>
+    <origin rpy="0 0 0" xyz="-.003 .28 .185"/>
+    <!-- <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/> -->
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
@@ -365,8 +365,8 @@
     <axis xyz="0 0 1"/>
     <parent link="link3"/>
     <child link="prop3"/>
-    <origin rpy="0 0 0" xyz="-.003 0 .185"/>
-    <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/>
+    <origin rpy="0 0 0" xyz="-.003 .28 .185"/>
+    <!-- <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/> -->
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
