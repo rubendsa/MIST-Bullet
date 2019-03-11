@@ -77,7 +77,8 @@ for i in range (0,15):
 
 for i in range (10000): #Time to run simulation
     p.stepSimulation()
-    time.sleep(1./1000.)
+    # time.sleep(0.0001)
+    print(i)
     p.applyExternalForce(boxId, 
                     -1, 
                     [0,0, 700],

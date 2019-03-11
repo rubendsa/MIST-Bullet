@@ -2,12 +2,18 @@ import numpy as np
 import pybullet as p
 import time
 import pybullet_data
+from ctypes import windll #new
+
+timeBeginPeriod = windll.winmm.timeBeginPeriod #new
+timeBeginPeriod(1) #new
 
 # Initalization Code
-physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
+# physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
+physicsClient = p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
 p.setGravity(0,0,-9.81)
-planeId = p.loadURDF("plane.urdf")
+# planeId = p.loadURDF("plane.urdf")
+
 
 
 # Load MIST-UAV
@@ -15,7 +21,7 @@ robotStartPos = [0,0,1]
 robotStartOrientation = p.getQuaternionFromEuler([0,0,0])
 # robotId = p.loadURDF("MIST.urdf",robotStartPos, robotStartOrientation)
 robotId = p.loadURDF("MIST.urdf",robotStartPos, robotStartOrientation)
-
+print(robotId)
 
 hingeIds = [0, 1, 2]
 ctrlSurfIds = [3, 5, 7, 9]
@@ -137,7 +143,7 @@ def tailsitterAttitudeControl():
 
 ###################     Helper functions   #####################
 # Action Vector
-def applyAction(actionVector, robotId):
+def applyAction(actionVector, robotId=robotId):
     m0, m1, m2, m3, c0, c1, c2, c3, h0, h1, h2 = actionVector
 
     # Thrust for each Motor
@@ -164,30 +170,37 @@ def applyAction(actionVector, robotId):
     p.setJointMotorControl2(robotId, hingeIds[2], p.POSITION_CONTROL, targetPosition=h2, force=1000)
 
 # State Vector
-def getUAVState(robotId):
-    a, b, c, d, e, f = p.getLinkState(robotId, 0)
+def getUAVState(robotId=robotId):
+    a, b, c, d, e, f, g, h = p.getLinkState(robotId, 0, 1)
     position = e # x,y,z
     orientation = f #Quaternion
-    return position, orientation 
+    velocity = g 
+    angular_velocity = h
+    return position, orientation, velocity, angular_velocity 
 
 
+def step():
+    p.stepSimulation()
+    # time.sleep(0.001)
 
+def set_to_pos_and_q(pos, q):
+    p.resetBasePositionAndOrientation(robotId, pos, q)
 
 ###################     RUN SIMULATION     #####################
 
 # tailsitterAttitudeControl()
+if __name__ == "__main__":
+    print("numjoints: ", p.getNumJoints(robotId))
+    simTime = 1000000
+    simDelay = 0.003
 
-print("numjoints: ", p.getNumJoints(robotId))
-simTime = 10000
-simDelay = 1./1000.
 
-
-for i in range (simTime): #Time to run simulation
-    p.stepSimulation()
-    time.sleep(simDelay)
+    for i in range (simTime): #Time to run simulation
+        p.stepSimulation()
+        time.sleep(simDelay)
 
     # applyAction([500, 500, 500, 500, .3, .1, -.1, -.3, .2, .2, .2], robotId) #Example applyAction
-    print(getUAVState(robotId))
+    # print(getUAVState(robotId))
     
 
 
