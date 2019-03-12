@@ -2,17 +2,17 @@ import numpy as np
 import pybullet as p
 import time
 import pybullet_data
-from ctypes import windll #new
+# from ctypes import windll #new
 
-timeBeginPeriod = windll.winmm.timeBeginPeriod #new
-timeBeginPeriod(1) #new
+# timeBeginPeriod = windll.winmm.timeBeginPeriod #new
+# timeBeginPeriod(1) #new
 
 # Initalization Code
 physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
 # physicsClient = p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
 p.setGravity(0,0,-9.81)
-# planeId = p.loadURDF("plane.urdf")
+planeId = p.loadURDF("plane.urdf")
 
 
 
@@ -199,7 +199,7 @@ def set_to_pos_and_q(pos, q):
 if __name__ == "__main__":
     print("numjoints: ", p.getNumJoints(robotId))
     simTime = 1000000
-    simDelay = 0.003
+    simDelay = 0.001
 
     p.addUserDebugLine([0,0,0], [0, 0, 1.0], [1.0,1.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = -1)
     p.addUserDebugLine([0,0,0], [0, 0, 1.0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0)
@@ -210,11 +210,11 @@ if __name__ == "__main__":
         p.stepSimulation()
         time.sleep(simDelay)
 
-        # applyAction([0, 0, 0, 0, .9, .9, .9, .9, 1.57, 1.57, 1.57], robotId) #Example applyAction
-        applyAction([0, 0, 0, 0, .3, .1, -.1, -.3, 0, 0, 0], robotId) #Example applyAction
+        applyAction([0, 0, 0, 0, .9, .9, .9, .9, 1.57, 1.57, 1.57], robotId) #Example applyAction
+        # applyAction([0, 0, 0, 0, .3, .1, -.1, -.3, 0, 0, 0], robotId) #Example applyAction
 
         if i>500:
-            applyAction([300, 250, 300, 250, 0, 0, 0, 0, 1.57, 1.57, 1.57], robotId) #Example applyAction
+            applyAction([300, 300, 300, 300, 0, 0, 0, 0, 1.57, 1.57, 1.57], robotId) #Example applyAction
             # applyAction([00, 00, 000, 000, 0, 0, 0, 0, 0, 0, .9], robotId) #Example applyAction
 
     

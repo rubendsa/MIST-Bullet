@@ -15,12 +15,12 @@
       </material>
     </visual>
     
-    <!-- <collision name='link0_collision'>
+    <collision name='link0_collision'>
         <origin rpy="0 0 0" xyz="0 0 -.2 "/>
         <geometry>
             <box size="0.7 0.7 0.4"/>
         </geometry>
-    </collision> -->
+    </collision>
     
     <inertial>
       <mass value="20"/>
@@ -43,13 +43,13 @@
 
     </visual>
     
-    <!-- <collision name='link1_collision'>
+    <collision name='link1_collision'>
         <origin rpy="0 0 0" xyz="0 0 -.2 "/>
 
         <geometry>
             <box size="0.7 0.7 0.4"/>
         </geometry>
-    </collision> -->
+    </collision>
     
     <inertial>
       <mass value="20"/>
@@ -73,13 +73,13 @@
       </material>
     </visual>
     
-    <!-- <collision name='link2_collision'>
+    <collision name='link2_collision'>
         <origin rpy="0 0 0" xyz="0 0 -.2 "/>
 
         <geometry>
             <box size="0.7 0.7 0.4"/>
         </geometry>
-    </collision> -->
+    </collision>
     
     <inertial>
       <mass value="20"/>
@@ -102,12 +102,12 @@
 
     </visual>
     
-    <!--<collision name='link3_collision'>
+    <collision name='link3_collision'>
         <origin rpy="0 0 0" xyz="0 0 -.05 "/>
         <geometry>
             <box size="0.7 0.7 0.4"/>
         </geometry>
-    </collision> -->
+    </collision>
     
     <inertial>
       <mass value="20"/>
