@@ -16,7 +16,7 @@
     </visual>
     
     <collision name='link0_collision'>
-        <origin rpy="0 0 0" xyz="0 0 -.2 "/>
+        <origin rpy="0 0 0" xyz="0 0 -.03 "/>
         <geometry>
             <box size="0.7 0.7 0.4"/>
         </geometry>
@@ -44,8 +44,7 @@
     </visual>
     
     <collision name='link1_collision'>
-        <origin rpy="0 0 0" xyz="0 0 -.2 "/>
-
+        <origin rpy="0 0 0" xyz="0 0 -.05 "/>
         <geometry>
             <box size="0.7 0.7 0.4"/>
         </geometry>
@@ -74,8 +73,7 @@
     </visual>
     
     <collision name='link2_collision'>
-        <origin rpy="0 0 0" xyz="0 0 -.2 "/>
-
+        <origin rpy="0 0 0" xyz="0 0 -.05 "/>
         <geometry>
             <box size="0.7 0.7 0.4"/>
         </geometry>
