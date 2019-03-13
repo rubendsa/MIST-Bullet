@@ -34,7 +34,7 @@ class solar:
         self.times = self.times.tz_localize(self.tz)
         self.T = 25.0 #temperature of the cells [K]
         self.n_s = 8
-        self.to_degrees = math.pi/2
+        self.to_degrees = 180/math.pi
 
         # default tilt and angle = quadrotor state
         # outside surfaces, 4 of them
@@ -49,6 +49,11 @@ class solar:
         self.dni_extra = pvlib.irradiance.extraradiation(self.times.dayofyear, method='pyephem')
         self.solis = pvlib.clearsky.simplified_solis(self.apparent_elevation, self.aod700, self.precipitable_water, self.pressure, self.dni_extra)
 
+        # of whole robot
+        self.roll = 0
+        self.pitch = 0
+        self.yaw = 0
+        
         # calculated throughout the day
 
         # total
@@ -57,15 +62,39 @@ class solar:
         # each surface
         self.P_mpp = [[],[],[],[],[],[],[],[]]
         self.eff_irrad = [[],[],[],[],[],[],[],[]]
-       
-    def set_RPY(self):
-        pass
 
-    def update_surfaces(self):
-        pass
+
+
+    def updateSurfaces(self, robotId):
+
         # for each section:
+        o0 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  9)) #may need to be -1 to 2?
+        o1 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  7))
+        o2 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  5))
+        o3 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  3))
 
-    def convert_RPY_to_TA(self,roll, pitch, yaw):
+        TA0 = self.convert_RPY_to_TA(o0)
+        TA1 = self.convert_RPY_to_TA(o1)
+        TA2 = self.convert_RPY_to_TA(o2)
+        TA3 = self.convert_RPY_to_TA(o3)
+
+        # TA = [A T]
+        self.surfaceA = [TA0[0],TA1[0],TA2[0],TA3[0]]
+        self.surfaceT = [TA0[1],TA1[1],TA2[1],TA3[1]]
+
+
+    def getLinkOrientation(self, robotId, linkIndex):
+        print(linkIndex)
+        # print("link0 state:",p.getLinkState(robotId, linkIndex))
+        a, b, c, d, e, f, g, h = p.getLinkState(robotId, linkIndex, 1)
+        orientation = f #Quaternion
+        return orientation
+
+    def convert_RPY_to_TA(self,orientation):
+        roll = orientation[0]
+        pitch = orientation[1]
+        yaw = orientation[2]
+
         # assumes radians
         el = math.asin(math.sin(roll)*math.sin(pitch))
         az = math.atan(math.cos(roll)*math.tan(pitch)) #TODO: atan2?
@@ -75,7 +104,7 @@ class solar:
         return rotation
 
     def calculate_power(self):
-        self.update_surfaces()
+        # self.update_surfaces()
 
         # for each surface with panels
         for i in range(0,4):
@@ -97,9 +126,13 @@ class solar:
         # this is a list of power values throughout a day
         self.power = power1
 
+    # def updatePos(self, euler):
+    #     self.roll = euler[0]
+    #     self.pitch = euler[1]
+    #     self.yaw = euler[2]
 
-print("Test")
-test = solar()
-test.calculate_power()
+# print("Test")
+# test = solar()
+# test.calculate_power()
 # print(test.power)
 # print(test.eff_irrad[0])

@@ -2,6 +2,7 @@ import numpy as np
 import pybullet as p
 import time
 import pybullet_data
+import MIST_solar
 # from ctypes import windll #new
 
 # timeBeginPeriod = windll.winmm.timeBeginPeriod #new
@@ -199,14 +200,24 @@ def set_to_pos_and_q(pos, q):
 if __name__ == "__main__":
     print("numjoints: ", p.getNumJoints(robotId))
     simTime = 1000000
-    simDelay = 0.001
+    simDelay = 0.1
 
     p.addUserDebugLine([0,0,0], [0, 0, 1.0], [1.0,1.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = -1)
     p.addUserDebugLine([0,0,0], [0, 0, 1.0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0)
     p.addUserDebugLine([0,0,0], [0, 0, 1.0], [0.0,1.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 1)
     p.addUserDebugLine([0,0,0], [0, 0, 1.0], [0.0,0.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = 2)
 
+    solarSim = MIST_solar.solar()
+    # solarSim.calculate_power()
+
     for i in range (simTime): #Time to run simulation
+        currentState = getUAVState(robotId)
+        # solarSim.updatePos(p.getEulerFromQuaternion(currentState[1]))
+        solarSim.updateSurfaces(robotId)
+        print(solarSim.surfaceA)
+        # solarSim.calculate_power()
+        # a, b, c, d, e, f, g, h = p.getLinkState(robotId, -1, 1)
+
         p.stepSimulation()
         time.sleep(simDelay)
 
