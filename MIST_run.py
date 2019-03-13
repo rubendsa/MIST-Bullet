@@ -1,11 +1,14 @@
 import numpy as np
+from numpy import linalg as LA
 import pybullet as p
 import time
 import pybullet_data
-# from ctypes import windll #new
 
+########## START UNCOMMENT FOR WINDOWS ###########
+# from ctypes import windll #new
 # timeBeginPeriod = windll.winmm.timeBeginPeriod #new
 # timeBeginPeriod(1) #new
+########## END UNCOMMENT FOR WINDOWS ############
 
 # Initalization Code
 physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
@@ -80,66 +83,71 @@ def cycleEverything(i, simTime):
 
 
 
-def quadAttitudeControl():
-    p.applyExternalForce(robotId, 
-                    0, 
-                    [0,0, 300],
-                    [0,-.28,0],
-                    1)
+def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
-    p.applyExternalForce(robotId, 
-                    1, 
-                    [0,0, 300],
-                    [0,-.28,0],
-                    1)
+    # Set Gains and Parameters TODO: Move this out
+    K_position = np.eye(3) * np.array([[2, 2, 2]]) 
+    K_velocity = np.eye(3) * np.array([[2, 2, 2]])
+    K_rotation = np.eye(3) * np.array([[2, 2, 2]])
+    K_angularVelocity = np.eye(3) * np.array([[2, 2, 2]])
 
-    p.applyExternalForce(robotId, 
-                    2, 
-                    [0,0, 300],
-                    [0,-.28,0],
-                    1)
+    kf = 1
+    km = 1
+    L = 1
+
+    mass = 4 #Mass in [kg]
+    g = 9.81
+
+    # Get pose
+    a, b, c, d, e, f, g, h = p.getLinkState(robotId, -1, 1)
+    positionW = a
+    orientationW = b
+    positionB = e
+    orientationB = f
+    angularVelocityW = h
+    # Get World to Body Rotation Matrix from Quaternion (3x3 for x,y,z)
+    rotBtoW = np.array(p.getMatrixFromQuaternion(orientationW))
+
+
+    des_positionW, des_orientationW, des_velocityW, des_angular_velocityW = robotDesiredPoseWorld
+    # Compute position and velocity error
+    error_position = positionW - des_positionW
+    error_velocity = velocityW - des_velocityW
+
+    # Compute Force in world frame
+    des_F = -K_position * error_position - K_velocity * error_velocity + np.array([[0,0, mass * g]]).T #
+    # Compute u1 -> Force in world frame projected into the body z-axis
+    zB = rotBtoW * np.array([[0,0,1]]).T
+    u1 = des_F * zB
+
+    des_zB = des_F / LA.norm(des_F)
+
+    des_xC = np.array([[np.cos(yaw), np.sin(yaw), 0]]).T
+
+    des_yB = np.cross(des_zB, des_xC) / LA.norm(np.cross(des_zB, des_xC)) 
+
+    des_xB = np.cross(des_yB, des_zB)
+
+    des_R = np.array(des_xB.T, des_yB.T, des_zB.T)
+
+    eR_mat = 1/2 * (des_R.T * rotBtoW - rotBtoW.T * des_R)
+
+    eR = np.array([eR_mat[2,1], eR_mat[0,2], eR_mat[1,0]])
+
+    eW = angularVelocityW - des_angular_velocityW
+
+    u24 = -K_rotation * eR - K_angularVelocity * eW
+
+    u = np.array(u1, u24)
+
+    geo = np.array([[kf, kf, kf, kf,]
+                    [0, kf*L, 0, -kf*L]
+                    [-kf*L, 0, kf*L, 0]
+                    [km, -km, km, -km]])
     
-    p.applyExternalForce(robotId, 
-                    3, 
-                    [0,0, 300],
-                    [0,-.28,0],
-                    1)
+    # Compute angular velocities
 
-    # p.applyExternalForce(robotId, 
-    #                 -1, 
-    #                 [0,0, 2000],
-    #                 [0,.85,0],
-    #                 1)
-
-def tailsitterAttitudeControl():
-    # print("link0 state:",p.getLinkState(robotId, 0))
-    a, b, c, d, e, f= p.getLinkState(robotId, 0)
-
-    print("Orientation:", f) 
-    p.applyExternalForce(robotId, 
-                    0, 
-                    [0,0, 300],
-                    [0,-.28,0],
-                    1)
-
-    p.applyExternalForce(robotId, 
-                    1, 
-                    [0,0, 300],
-                    [0,-.28,0],
-                    1)
-
-    p.applyExternalForce(robotId, 
-                    2, 
-                    [0,0, 300],
-                    [0,-.28,0],
-                    1)
-    
-    p.applyExternalForce(robotId, 
-                    3, 
-                    [0,0, 300],
-                    [0,-.28,0],
-                    1)
-
+    w = LA.inv(geo) * u
 
 ###################     Helper functions   #####################
 # Action Vector
@@ -178,7 +186,7 @@ def applyAction(actionVector, robotId=robotId):
 
 # State Vector
 def getUAVState(robotId=robotId):
-    a, b, c, d, e, f, g, h = p.getLinkState(robotId, 0, 1)
+    a, b, c, d, e, f, g, h = p.getLinkState(robotId, -1, 1)
     position = e # x,y,z
     orientation = f #Quaternion
     velocity = g 
@@ -210,15 +218,21 @@ if __name__ == "__main__":
         p.stepSimulation()
         time.sleep(simDelay)
 
-        applyAction([0, 0, 0, 0, .9, .9, .9, .9, 1.57, 1.57, 1.57], robotId) #Example applyAction
-        # applyAction([0, 0, 0, 0, .3, .1, -.1, -.3, 0, 0, 0], robotId) #Example applyAction
+        # applyAction([0, 0, 0, 0, .9, .9, .9, .9, 1.57, 1.57, 1.57], robotId) #Example applyAction
+        applyAction([0, 0, 0, 0, .3, .1, -.1, -.3, 0, 0, 0], robotId) #Example applyAction
 
         if i>500:
-            applyAction([300, 300, 300, 300, 0, 0, 0, 0, 1.57, 1.57, 1.57], robotId) #Example applyAction
+            applyAction([30, 30, 30, 30, 0, 0, 0, 0, 1.57, 1.57, 1.57], robotId) #Example applyAction
             # applyAction([00, 00, 000, 000, 0, 0, 0, 0, 0, 0, .9], robotId) #Example applyAction
 
-    
-    # print(getUAVState(robotId))
-    
+        ##### Testing attitude and position controller:
+        # des_positionW = [1,1,1]
+        # des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
+        # des_velocityW = [0,0,0]
+        # des_angular_velocityW = [0,0,0]
+
+        # robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
+
+        # quadAttitudeControl(robotId, robotDesiredPoseWorld)    
 
 
