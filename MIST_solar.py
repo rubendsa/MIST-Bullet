@@ -68,10 +68,10 @@ class solar:
     def updateSurfaces(self, robotId):
 
         # for each section:
-        o0 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  9)) #may need to be -1 to 2?
-        o1 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  7))
-        o2 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  5))
-        o3 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  3))
+        o0 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  -1)) #may need to be -1 to 2?
+        o1 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  0))
+        o2 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  1))
+        o3 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  2))
 
         TA0 = self.convert_RPY_to_TA(o0)
         TA1 = self.convert_RPY_to_TA(o1)
@@ -84,10 +84,12 @@ class solar:
 
 
     def getLinkOrientation(self, robotId, linkIndex):
-        print(linkIndex)
-        # print("link0 state:",p.getLinkState(robotId, linkIndex))
-        a, b, c, d, e, f, g, h = p.getLinkState(robotId, linkIndex, 1)
-        orientation = f #Quaternion
+        if linkIndex == -1:
+            pose = p.getBasePositionAndOrientation(robotId)
+            return pose[1] # Quaternion
+        else:
+            a, b, c, d, e, f, g, h = p.getLinkState(robotId, linkIndex, 1)
+            orientation = f # Quaternion
         return orientation
 
     def convert_RPY_to_TA(self,orientation):

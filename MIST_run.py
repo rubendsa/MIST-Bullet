@@ -200,7 +200,7 @@ def set_to_pos_and_q(pos, q):
 if __name__ == "__main__":
     print("numjoints: ", p.getNumJoints(robotId))
     simTime = 1000000
-    simDelay = 0.1
+    simDelay = 0.01
 
     p.addUserDebugLine([0,0,0], [0, 0, 1.0], [1.0,1.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = -1)
     p.addUserDebugLine([0,0,0], [0, 0, 1.0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0)
@@ -212,11 +212,8 @@ if __name__ == "__main__":
 
     for i in range (simTime): #Time to run simulation
         currentState = getUAVState(robotId)
-        # solarSim.updatePos(p.getEulerFromQuaternion(currentState[1]))
         solarSim.updateSurfaces(robotId)
         print(solarSim.surfaceA)
-        # solarSim.calculate_power()
-        # a, b, c, d, e, f, g, h = p.getLinkState(robotId, -1, 1)
 
         p.stepSimulation()
         time.sleep(simDelay)
