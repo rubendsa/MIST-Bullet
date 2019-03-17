@@ -1,2 +1,2 @@
-# MIST-Bullet
-MIST-UAV modeled in the pyBullet environment
+# MIST_Bullet
+Simulation of the MIST UAV using pyBullet physics
