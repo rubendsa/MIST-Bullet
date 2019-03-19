@@ -87,15 +87,15 @@ def cycleEverything(i, simTime):
 def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     # Set Gains and Parameters TODO: Move this out
-    K_position = np.eye(3) * np.array([[2, 2, 2]])
+    K_position = np.eye(3) * np.array([[20, 20, 20]])
     # print(K_position) 
-    K_velocity = np.eye(3) * np.array([[2, 2, 2]])
-    K_rotation = np.eye(3) * np.array([[2, 2, 2]])
-    K_angularVelocity = np.eye(3) * np.array([[2, 2, 2]])
+    K_velocity = np.eye(3) * np.array([[20, 20, 20]])
+    K_rotation = np.eye(3) * np.array([[20, 20, 20]])
+    K_angularVelocity = np.eye(3) * np.array([[20, 20, 20]])
 
-    kf = 1
-    km = 1
-    L = 1
+    kf = 2
+    km = 2
+    L = .5
 
     mass = 4 #Mass in [kg]
     gravity = 9.81
@@ -196,6 +196,8 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     w = LA.inv(geo) @ u
 
+    return w
+
 ###################     Helper functions   #####################
 # Action Vector
 def applyAction(actionVector, robotId=robotId):
@@ -273,14 +275,18 @@ if __name__ == "__main__":
             # applyAction([00, 00, 000, 000, 0, 0, 0, 0, 0, 0, .9], robotId) #Example applyAction
 
         ##### Testing attitude and position controller:
-        des_positionW = [1,1,1]
+        des_positionW = [0,0,10]
         des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
         des_velocityW = [0,0,0]
         des_angular_velocityW = [0,0,0]
 
         robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
 
-        quadAttitudeControl(robotId, robotDesiredPoseWorld)   
+        m2, m3, m0, m1 = quadAttitudeControl(robotId, robotDesiredPoseWorld) 
+
+        applyAction([m0, m1, m2, m3, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
+
+         
         # print("linkid", p.getLinkState(robotId, 0, 1))
 
 
