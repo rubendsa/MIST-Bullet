@@ -87,15 +87,16 @@ def cycleEverything(i, simTime):
 def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     # Set Gains and Parameters TODO: Move this out
-    K_position = np.eye(3) * np.array([[20, 20, 20]])
+    K_position = np.eye(3) * np.array([[20, 20, 20]]) # gain for x, y, z components of error vector
     # print(K_position) 
     K_velocity = np.eye(3) * np.array([[20, 20, 20]])
+
     K_rotation = np.eye(3) * np.array([[20, 20, 20]])
     K_angularVelocity = np.eye(3) * np.array([[20, 20, 20]])
 
     kf = 2
     km = 2
-    L = .5
+    L = .28
 
     mass = 4 #Mass in [kg]
     gravity = 9.81
@@ -133,8 +134,8 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     des_F = -K_position @ error_position.T - K_velocity @ error_velocity.T + np.array([[0,0, mass * gravity]]).T #
     # Compute u1 -> Force in world frame projected into the body z-axis
     zB = rotBtoW @ np.array([[0,0,1]]).T
-    print("zB", zB)
-    print("des_F", des_F)
+    # print("zB", zB)
+    # print("des_F", des_F)
 
     u1 = des_F.T @ zB
 
@@ -150,40 +151,41 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # print((np.cross(des_zB.T, des_xC.T) / LA.norm(np.cross(des_zB.T, des_xC.T))).T)
     des_xB = np.cross(des_yB.T, des_zB.T)
 
-    print("des_xB.T", des_xB.T)
-    print(des_yB)
-    print(des_zB)
+    # print("des_xB.T", des_xB.T)
+    # print(des_yB)
+    # print(des_zB)
     des_R = np.concatenate((des_xB.T, des_yB, des_zB), axis = 1)
 
     # print(des_R.T)
     # print(rotBtoW)
 
-    print("des_R.T", des_R.T)
+    # print("des_R.T", des_R.T)
     eR_mat = .5 * (des_R.T @ rotBtoW - rotBtoW.T @ des_R)
 
     eR = np.array([[eR_mat[2,1], eR_mat[0,2], eR_mat[1,0]]])
 
-    print("er_mat", eR_mat)
-    print("er", eR)
+    # print("er_mat", eR_mat)
+    # print("er", eR)
     # print(angularVelocityW)
     # print(des_angular_velocityW)
 
     eW = angularVelocityW - np.array([des_angular_velocityW])
 
-    print("-K_rotation @ eR.T", -K_rotation @ eR.T)
-    print("- K_angularVelocity @ eW.T", - K_angularVelocity @ eW.T)
+    # print("-K_rotation @ eR.T", -K_rotation @ eR.T)
+    # print("- K_angularVelocity @ eW.T", - K_angularVelocity @ eW.T)
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
-
+    u24 = np.clip(u24, -10.0, 10.0)
     # print("u1:", u1)
     # print("des_F", des_F)
     # print("zB", zB)
-    print("eR", eR)
-    print("k_Rot", -K_rotation @ eR.T)
+    # print("eR", eR)
+    # print("k_Rot", -K_rotation @ eR.T)
 
-    print("u24:", u24)
+    # print("u24:", u24)
     u = np.concatenate((u1, u24))
-
     print("u:", u)
+
+    # print("u:", u)
 
     geo = np.array([[kf, kf, kf, kf],
                     [0, kf*L, 0, -kf*L],
@@ -191,8 +193,8 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
                     [km, -km, km, -km]])
     
     # Compute angular velocities
-    print("LA.inv(geo):", LA.inv(geo))
-    print("u:", u)
+    # print("LA.inv(geo):", LA.inv(geo))
+    # print("u:", u)
 
     w = LA.inv(geo) @ u
 
@@ -256,7 +258,7 @@ def set_to_pos_and_q(pos, q):
 if __name__ == "__main__":
     print("numjoints: ", p.getNumJoints(robotId))
     simTime = 1000000
-    simDelay = 0.001
+    simDelay = 0.00001
 
     # p.addUserDebugLine([0,0,0], [0, 0, 1.0], [1.0,1.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = -1)
     # p.addUserDebugLine([0,0,0], [0, 0, 1.0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0)
@@ -275,7 +277,7 @@ if __name__ == "__main__":
             # applyAction([00, 00, 000, 000, 0, 0, 0, 0, 0, 0, .9], robotId) #Example applyAction
 
         ##### Testing attitude and position controller:
-        des_positionW = [0,0,10]
+        des_positionW = [0,0,5]
         des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
         des_velocityW = [0,0,0]
         des_angular_velocityW = [0,0,0]
