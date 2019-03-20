@@ -3,6 +3,7 @@ from numpy import linalg as LA
 import pybullet as p
 import time
 import pybullet_data
+import matplotlib as plt
 
 
 ########## START UNCOMMENT FOR WINDOWS ###########
@@ -89,7 +90,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # Set Gains and Parameters TODO: Move this out
     K_position = np.eye(3) * np.array([[20, 20, 20]]) # gain for x, y, z components of error vector
     # print(K_position) 
-    K_velocity = np.eye(3) * np.array([[20, 20, 20]])
+    K_velocity = np.eye(3) * np.array([[15, 15, 15]])
 
     K_rotation = np.eye(3) * np.array([[20, 20, 20]])
     K_angularVelocity = np.eye(3) * np.array([[20, 20, 20]])
@@ -117,7 +118,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
                         [listBtoW[6], listBtoW[7], listBtoW[8]]])
 
     des_positionW, des_orientationW, des_velocityW, des_angular_velocityW = robotDesiredPoseWorld
-    des_yaw = 1.57
+    des_yaw = 0
     
 
     # Compute position and velocity error
@@ -139,42 +140,49 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     u1 = des_F.T @ zB
 
-    des_zB = des_F / LA.norm(des_F)
+    des_zB = (des_F / LA.norm(des_F)).T
 
-    des_xC = np.array([[np.cos(des_yaw), np.sin(des_yaw), 0]]).T
+    des_xC = np.array([np.cos(des_yaw), np.sin(des_yaw), 0]).T
 
     # print(des_zB)
     # print(des_xC)
     # print(np.cross(des_zB.T, des_xC.T))
-    des_yB = (np.cross(des_zB.T, des_xC.T) / LA.norm(np.cross(des_zB.T, des_xC.T))).T
+    des_yB = (np.cross(des_zB, des_xC) / LA.norm(np.cross(des_zB, des_xC)))
     # print(LA.norm(np.cross(des_zB.T, des_xC.T)))
     # print((np.cross(des_zB.T, des_xC.T) / LA.norm(np.cross(des_zB.T, des_xC.T))).T)
-    des_xB = np.cross(des_yB.T, des_zB.T)
+    des_xB = np.cross(des_yB, des_zB)
 
     # print("des_xB.T", des_xB.T)
-    # print(des_yB)
-    # print(des_zB)
-    des_R = np.concatenate((des_xB.T, des_yB, des_zB), axis = 1)
+    # print("des_xB", des_xB)
+    # print("des_yB", des_yB)
+    # print("des_zB", des_zB)
+    # print("des_R", des_R)
 
-    # print(des_R.T)
-    # print(rotBtoW)
+    des_R = np.concatenate((des_xB, des_yB, des_zB), axis = 0).T
 
-    # print("des_R.T", des_R.T)
+
     eR_mat = .5 * (des_R.T @ rotBtoW - rotBtoW.T @ des_R)
+    print("eR_mat:", eR_mat)
 
     eR = np.array([[eR_mat[2,1], eR_mat[0,2], eR_mat[1,0]]])
-
+    print("eR", eR)
     # print("er_mat", eR_mat)
     # print("er", eR)
     # print(angularVelocityW)
     # print(des_angular_velocityW)
 
-    eW = angularVelocityW - np.array([des_angular_velocityW])
+    eW = (LA.inv(rotBtoW) @ angularVelocityW.T - np.array([des_angular_velocityW]).T).T # Was this supposed to be in the Body frame?
+    print("eW", eW)
+
 
     # print("-K_rotation @ eR.T", -K_rotation @ eR.T)
     # print("- K_angularVelocity @ eW.T", - K_angularVelocity @ eW.T)
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
+    
+    # u1 = np.clip(u1, -200.0, 200.0)
     u24 = np.clip(u24, -10.0, 10.0)
+    
+    
     # print("u1:", u1)
     # print("des_F", des_F)
     # print("zB", zB)
@@ -277,7 +285,7 @@ if __name__ == "__main__":
             # applyAction([00, 00, 000, 000, 0, 0, 0, 0, 0, 0, .9], robotId) #Example applyAction
 
         ##### Testing attitude and position controller:
-        des_positionW = [0,0,5]
+        des_positionW = [0,0,10]
         # des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
         des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
         des_velocityW = [0,0,0]
