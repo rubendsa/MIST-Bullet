@@ -117,7 +117,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
                         [listBtoW[6], listBtoW[7], listBtoW[8]]])
 
     des_positionW, des_orientationW, des_velocityW, des_angular_velocityW = robotDesiredPoseWorld
-    des_yaw = 0
+    des_yaw = 1.57
     
 
     # Compute position and velocity error
@@ -278,6 +278,7 @@ if __name__ == "__main__":
 
         ##### Testing attitude and position controller:
         des_positionW = [0,0,5]
+        # des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
         des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
         des_velocityW = [0,0,0]
         des_angular_velocityW = [0,0,0]
