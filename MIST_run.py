@@ -88,9 +88,9 @@ def cycleEverything(i, simTime):
 def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     # Set Gains and Parameters TODO: Move this out
-    K_position = np.eye(3) * np.array([[8, 8, 15]]) # gain for x, y, z components of error vector
+    K_position = np.eye(3) * np.array([[.5, .5, 200]]) # gain for x, y, z components of error vector
     # print(K_position) 
-    K_velocity = np.eye(3) * np.array([[0, 0, 10]])
+    K_velocity = np.eye(3) * np.array([[10, 10, 10]])
 
     K_rotation = np.eye(3) * np.array([[5, 5, 5]])
     K_angularVelocity = np.eye(3) * np.array([[5, 5, 5]])
@@ -106,6 +106,8 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     a, b, c, d, e, f, g, h = p.getLinkState(robotId, 0, 1) #getLinkState() has a bug for getting the parent link index (-1). Use 0 for now
     positionW = a
     orientationW = b
+    print("position:", a)
+    print("orientation",b)
     positionB = e
     orientationB = f
     velocityW = g
@@ -179,8 +181,8 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # print("- K_angularVelocity @ eW.T", - K_angularVelocity @ eW.T)
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
-    u1 = np.clip(u1, -200.0, 200.0)
-    u24 = np.clip(u24, -10.0, 10.0)
+    # u1 = np.clip(u1, -200.0, 200.0)
+    # u24 = np.clip(u24, -20.0, 20.0)
     
     
     # print("u1:", u1)
@@ -272,7 +274,7 @@ def visualizeThrottle(m0, m1, m2, m3):
 if __name__ == "__main__":
     print("numjoints: ", p.getNumJoints(robotId))
     simTime = 1000000
-    simDelay = 0.00001
+    simDelay = 0.000001
     p.resetDebugVisualizerCamera(15, 45, -30, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
     p.resetBasePositionAndOrientation(robotId, [0,0,5], [0,0,0,1]) # Staring position of robot
 
@@ -297,6 +299,7 @@ if __name__ == "__main__":
         robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
 
         m2, m3, m0, m1 = quadAttitudeControl(robotId, robotDesiredPoseWorld) 
+        [m0, m1, m2, m3]=np.clip([m0, m1, m2, m3],0, None)
         # visualizeThrottle(m0, m1, m2, m3)
         # print("m0",m0)
         applyAction([m0, m1, m2, m3, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
