@@ -88,12 +88,12 @@ def cycleEverything(i, simTime):
 def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     # Set Gains and Parameters TODO: Move this out
-    K_position = np.eye(3) * np.array([[20, 20, 20]]) # gain for x, y, z components of error vector
+    K_position = np.eye(3) * np.array([[8, 8, 15]]) # gain for x, y, z components of error vector
     # print(K_position) 
-    K_velocity = np.eye(3) * np.array([[15, 15, 15]])
+    K_velocity = np.eye(3) * np.array([[0, 0, 10]])
 
-    K_rotation = np.eye(3) * np.array([[20, 20, 20]])
-    K_angularVelocity = np.eye(3) * np.array([[20, 20, 20]])
+    K_rotation = np.eye(3) * np.array([[5, 5, 5]])
+    K_angularVelocity = np.eye(3) * np.array([[5, 5, 5]])
 
     kf = 2
     km = 2
@@ -162,24 +162,24 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
 
     eR_mat = .5 * (des_R.T @ rotBtoW - rotBtoW.T @ des_R)
-    print("eR_mat:", eR_mat)
+    # print("eR_mat:", eR_mat)
 
     eR = np.array([[eR_mat[2,1], eR_mat[0,2], eR_mat[1,0]]])
-    print("eR", eR)
+    # print("eR", eR)
     # print("er_mat", eR_mat)
     # print("er", eR)
     # print(angularVelocityW)
     # print(des_angular_velocityW)
 
     eW = (LA.inv(rotBtoW) @ angularVelocityW.T - np.array([des_angular_velocityW]).T).T # Was this supposed to be in the Body frame?
-    print("eW", eW)
+    # print("eW", eW)
 
 
     # print("-K_rotation @ eR.T", -K_rotation @ eR.T)
     # print("- K_angularVelocity @ eW.T", - K_angularVelocity @ eW.T)
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
-    # u1 = np.clip(u1, -200.0, 200.0)
+    u1 = np.clip(u1, -200.0, 200.0)
     u24 = np.clip(u24, -10.0, 10.0)
     
     
@@ -191,7 +191,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     # print("u24:", u24)
     u = np.concatenate((u1, u24))
-    print("u:", u)
+    # print("u:", u)
 
     # print("u:", u)
 
@@ -260,6 +260,12 @@ def step():
 def set_to_pos_and_q(pos, q):
     p.resetBasePositionAndOrientation(robotId, pos, q)
 
+def visualizeThrottle(m0, m1, m2, m3):
+    p.addUserDebugLine([0,0,0], [0, 0, m0/10], [1.0,1.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = -1, lifeTime = .1)
+    p.addUserDebugLine([0,0,0], [0, 0, m1/10], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0, lifeTime = .1)
+    p.addUserDebugLine([0,0,0], [0, 0, m2/10], [0.0,1.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 1, lifeTime = .1)
+    p.addUserDebugLine([0,0,0], [0, 0, m3/10], [0.0,0.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = 2, lifeTime = .1)
+
 ###################     RUN SIMULATION     #####################
 
 # tailsitterAttitudeControl()
@@ -267,11 +273,8 @@ if __name__ == "__main__":
     print("numjoints: ", p.getNumJoints(robotId))
     simTime = 1000000
     simDelay = 0.00001
-
-    # p.addUserDebugLine([0,0,0], [0, 0, 1.0], [1.0,1.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = -1)
-    # p.addUserDebugLine([0,0,0], [0, 0, 1.0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0)
-    # p.addUserDebugLine([0,0,0], [0, 0, 1.0], [0.0,1.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 1)
-    # p.addUserDebugLine([0,0,0], [0, 0, 1.0], [0.0,0.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = 2)
+    p.resetDebugVisualizerCamera(15, 45, -30, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
+    p.resetBasePositionAndOrientation(robotId, [0,0,5], [0,0,0,1]) # Staring position of robot
 
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
@@ -285,7 +288,7 @@ if __name__ == "__main__":
             # applyAction([00, 00, 000, 000, 0, 0, 0, 0, 0, 0, .9], robotId) #Example applyAction
 
         ##### Testing attitude and position controller:
-        des_positionW = [0,0,10]
+        des_positionW = [0,0,5]
         # des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
         des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
         des_velocityW = [0,0,0]
@@ -294,7 +297,8 @@ if __name__ == "__main__":
         robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
 
         m2, m3, m0, m1 = quadAttitudeControl(robotId, robotDesiredPoseWorld) 
-
+        # visualizeThrottle(m0, m1, m2, m3)
+        # print("m0",m0)
         applyAction([m0, m1, m2, m3, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
 
          
