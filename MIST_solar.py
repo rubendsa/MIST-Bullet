@@ -63,20 +63,25 @@ class solar:
         self.P_mpp = [[],[],[],[],[],[],[],[]]
         self.eff_irrad = [[],[],[],[],[],[],[],[]]
 
+        self.o0 = 0
+        self.o1 = 0
+        self.o2 = 0
+        self.o3 = 0
+
 
 
     def updateSurfaces(self, robotId):
 
         # for each section:
-        o0 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  -1)) #may need to be -1 to 2?
-        o1 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  0))
-        o2 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  1))
-        o3 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  2))
+        self.o0 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  -1)) #may need to be -1 to 2?
+        self.o1 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  0))
+        self.o2 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  1))
+        self.o3 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  2))
 
-        TA0 = self.convert_RPY_to_TA(o0)
-        TA1 = self.convert_RPY_to_TA(o1)
-        TA2 = self.convert_RPY_to_TA(o2)
-        TA3 = self.convert_RPY_to_TA(o3)
+        TA0 = self.convert_RPY_to_TA(self.o0)
+        TA1 = self.convert_RPY_to_TA(self.o1)
+        TA2 = self.convert_RPY_to_TA(self.o2)
+        TA3 = self.convert_RPY_to_TA(self.o3)
 
         # TA = [A T]
         self.surfaceA = [TA0[0],TA1[0],TA2[0],TA3[0]]
@@ -98,8 +103,16 @@ class solar:
         yaw = orientation[2]
 
         # assumes radians
-        el = math.asin(math.sin(roll)*math.sin(pitch))
-        az = math.atan(math.cos(roll)*math.tan(pitch)) #TODO: atan2?
+        # el = math.asin(math.sin(roll)*math.sin(pitch))
+        # az = math.atan(math.cos(roll)*math.tan(pitch)) #TODO: atan2?
+
+        az = yaw
+
+        num = math.sin(pitch) + math.sin(roll)
+        den =math.sqrt(2 + 2*math.sin(pitch)*math.sin(roll))
+
+        el = math.asin(num/den)
+         
 
         # convert to degrees
         rotation = [az*self.to_degrees, el*self.to_degrees]
