@@ -88,12 +88,12 @@ def cycleEverything(i, simTime):
 def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     # Set Gains and Parameters TODO: Move this out
-    K_position = np.eye(3) * np.array([[1, 1, 50]]) # gain for x, y, z components of error vector
+    K_position = np.eye(3) * np.array([[0, 0, 0]]) # gain for x, y, z components of error vector
     # print(K_position) 
-    K_velocity = np.eye(3) * np.array([[1, 1, 10]])
+    K_velocity = np.eye(3) * np.array([[0, 0, 0]])
 
-    K_rotation = np.eye(3) * np.array([[3, 3, 3]])
-    K_angularVelocity = np.eye(3) * np.array([[3, 3, 3]])
+    K_rotation = np.eye(3) * np.array([[20, 20, 20]])
+    K_angularVelocity = np.eye(3) * np.array([[15, 15, 15]])
 
     kf = 2
     km = .5
@@ -182,7 +182,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
     # u1 = np.clip(u1, -200.0, 200.0)
-    # u24 = np.clip(u24, -20.0, 20.0)
+    u24 = np.clip(u24, -20.0, 20.0)
     
     
     # print("u1:", u1)
@@ -388,7 +388,7 @@ if __name__ == "__main__":
     simTime = 1000000
     simDelay = 0.0001
     p.resetDebugVisualizerCamera(15, 45, -30, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
-    p.resetBasePositionAndOrientation(robotId, [0,0,5], [0,0,0,1]) # Staring position of robot
+    p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
 
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
@@ -402,7 +402,7 @@ if __name__ == "__main__":
             # applyAction([00, 00, 000, 000, 0, 0, 0, 0, 0, 0, .9], robotId) #Example applyAction
 
         ##### Testing attitude and position controller:
-        des_positionW = [10,0,5]
+        des_positionW = [0,0,5]
         # des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
         des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
         des_velocityW = [0,0,0]
