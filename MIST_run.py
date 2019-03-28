@@ -3,6 +3,9 @@ import pybullet as p
 import time
 import pybullet_data
 import MIST_solar
+
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 # from ctypes import windll #new
 
 # timeBeginPeriod = windll.winmm.timeBeginPeriod #new
@@ -194,10 +197,13 @@ def step():
 def set_to_pos_and_q(pos, q):
     p.resetBasePositionAndOrientation(robotId, pos, q)
 
+
 ###################     RUN SIMULATION     #####################
 
 # tailsitterAttitudeControl()
 if __name__ == "__main__":
+    xval  = 0
+    yval = 0
     print("numjoints: ", p.getNumJoints(robotId))
     simTime = 1000000
     simDelay = 0.01
@@ -208,16 +214,31 @@ if __name__ == "__main__":
     p.addUserDebugLine([0,0,0], [0, 0, 1.0], [0.0,0.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = 2)
 
     solarSim = MIST_solar.solar()
-    # solarSim.calculate_power()
 
     for i in range (simTime): #Time to run simulation
         currentState = getUAVState(robotId)
         solarSim.updateSurfaces(robotId)
-        print(solarSim.surfaceA)
+
+        # don't always calculate power because it's currently slow
+        if i%10 == 0:
+            solarSim.calculate_power()
+
+            # mid day power
+            power_mid = (solarSim.power[int(len(solarSim.power)/2)])
+
+            # debugging
+            print(str(i) + " " + str(power_mid))
+
+            # plot
+            plt.scatter(i, power_mid)
+            plt.xlabel('Simulation Time Step')
+            plt.ylabel('Power At Mid Day')
+            plt.title('Mid Day Power')
+            plt.pause(0.005)
 
         p.stepSimulation()
         time.sleep(simDelay)
-
+       
         applyAction([0, 0, 0, 0, .9, .9, .9, .9, 1.57, 1.57, 1.57], robotId) #Example applyAction
         # applyAction([0, 0, 0, 0, .3, .1, -.1, -.3, 0, 0, 0], robotId) #Example applyAction
 
@@ -225,8 +246,8 @@ if __name__ == "__main__":
             applyAction([300, 300, 300, 300, 0, 0, 0, 0, 1.57, 1.57, 1.57], robotId) #Example applyAction
             # applyAction([00, 00, 000, 000, 0, 0, 0, 0, 0, 0, .9], robotId) #Example applyAction
 
-    
     # print(getUAVState(robotId))
+    plt.show()
     
 
 
