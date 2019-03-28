@@ -92,7 +92,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # print(K_position) 
     K_velocity = np.eye(3) * np.array([[0, 0, 0]])
 
-    K_rotation = np.eye(3) * np.array([[20, 20, 20]])
+    K_rotation = np.eye(3) * np.array([[36, 36, 36]])
     K_angularVelocity = np.eye(3) * np.array([[15, 15, 15]])
 
     kf = 2
@@ -213,7 +213,6 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     w = np.sqrt(w2)
     print("w", w)
 
-
     return w
 
 # def quadAttitudeControlCoursera(robotId, robotDesiredPoseWorld):
@@ -314,6 +313,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 def applyAction(actionVector, robotId=robotId):
     w0, w1, w2, w3, c0, c1, c2, c3, h0, h1, h2 = actionVector
 
+    print("w0", w0)
     Kf = 2 # TODO: Put this in an object. 
     Km = .5
 
@@ -341,10 +341,10 @@ def applyAction(actionVector, robotId=robotId):
 
 
     # Visual of propeller spinning (not critical)
-    p.setJointMotorControl2(robotId, propIds[0], p.VELOCITY_CONTROL, targetVelocity=w0, force=1000) 
-    p.setJointMotorControl2(robotId, propIds[1], p.VELOCITY_CONTROL, targetVelocity=w1, force=1000)
-    p.setJointMotorControl2(robotId, propIds[2], p.VELOCITY_CONTROL, targetVelocity=w2, force=1000)
-    p.setJointMotorControl2(robotId, propIds[3], p.VELOCITY_CONTROL, targetVelocity=w3, force=1000)
+    p.setJointMotorControl2(robotId, propIds[0], p.VELOCITY_CONTROL, targetVelocity=w0*100, force=1000) 
+    p.setJointMotorControl2(robotId, propIds[1], p.VELOCITY_CONTROL, targetVelocity=w1*100, force=1000)
+    p.setJointMotorControl2(robotId, propIds[2], p.VELOCITY_CONTROL, targetVelocity=w2*100, force=1000)
+    p.setJointMotorControl2(robotId, propIds[3], p.VELOCITY_CONTROL, targetVelocity=w3*100, force=1000)
     
     # Control surface deflection [rads]
     p.setJointMotorControl2(robotId, ctrlSurfIds[0], p.POSITION_CONTROL, targetPosition=c0, force=1000)
