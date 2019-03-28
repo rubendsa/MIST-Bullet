@@ -88,12 +88,14 @@ def cycleEverything(i, simTime):
 def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     # Set Gains and Parameters TODO: Move this out
-    K_position = np.eye(3) * np.array([[0, 0, 0]]) # gain for x, y, z components of error vector
-    # print(K_position) 
-    K_velocity = np.eye(3) * np.array([[0, 0, 0]])
+    # K_position = np.eye(3) * np.array([[30, 30, 100]]) # gain for x, y, z components of error vector
+    # K_velocity = np.eye(3) * np.array([[20, 20, 60]])
+
+    K_position = np.eye(3) * np.array([[0, 0, 100]]) # gain for x, y, z components of error vector
+    K_velocity = np.eye(3) * np.array([[0, 0, 60]])
 
     K_rotation = np.eye(3) * np.array([[36, 36, 36]])
-    K_angularVelocity = np.eye(3) * np.array([[15, 15, 15]])
+    K_angularVelocity = np.eye(3) * np.array([[30, 30, 30]])
 
     kf = 2
     km = .5
@@ -164,7 +166,13 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # print("des_zB", des_zB)
     # print("des_R", des_R)
 
-    des_R = np.concatenate((des_xB, des_yB, des_zB), axis = 0).T
+    # des_R = np.concatenate((des_xB, des_yB, des_zB), axis = 0).T
+
+    deslistBtoW = p.getMatrixFromQuaternion(des_orientationW)
+    desrotBtoW = np.array([[deslistBtoW[0], deslistBtoW[1], deslistBtoW[2]],
+                        [deslistBtoW[3], deslistBtoW[4], deslistBtoW[5]],
+                        [deslistBtoW[6], deslistBtoW[7], deslistBtoW[8]]])
+    des_R = desrotBtoW
 
 
     eR_mat = .5 * (des_R.T @ rotBtoW - rotBtoW.T @ des_R)
@@ -185,7 +193,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # print("- K_angularVelocity @ eW.T", - K_angularVelocity @ eW.T)
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
-    # u1 = np.clip(u1, -200.0, 200.0)
+    u1 = np.clip(u1, -100.0, 100.0)
     u24 = np.clip(u24, -20.0, 20.0)
     
     
@@ -418,9 +426,9 @@ def computeCenterOfMass():
 if __name__ == "__main__":
     print("numjoints: ", p.getNumJoints(robotId))
     simTime = 1000000
-    simDelay = 0.001
+    simDelay = 0.00001
     p.resetDebugVisualizerCamera(15, 45, -30, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
-    p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
+    p.resetBasePositionAndOrientation(robotId, [0,0,10], [0,0,0,1]) # Staring position of robot
 
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
@@ -436,7 +444,7 @@ if __name__ == "__main__":
             ##### Testing attitude and position controller:
             des_positionW = [0,0,5]
             # des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
-            des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
+            des_orientationW = p.getQuaternionFromEuler([.5,0,0]) # [roll, pitch, yaw]
             des_velocityW = [0,0,0]
             des_angular_velocityW = [0,0,0]
 
@@ -448,5 +456,5 @@ if __name__ == "__main__":
             applyAction([w0, w1, w2, w3, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
             # print("linkid", p.getLinkState(robotId, 0, 1))
         computeCenterOfMass()
-        visualizeCenterOfMass()
+        # visualizeCenterOfMass()
 
