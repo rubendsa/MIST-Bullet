@@ -104,10 +104,14 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     # Get pose
     a, b, c, d, e, f, g, h = p.getLinkState(robotId, 0, 1) #getLinkState() has a bug for getting the parent link index (-1). Use 0 for now
-    positionW = a
+    # positionW = a
+    # print("positionW", a)
+    positionW = computeCenterOfMass()
+    print("positionW", positionW)
+
     orientationW = b
-    print("position:", a)
-    print("orientation",b)
+    # print("position:", a)
+    # print("orientation",b)
     positionB = e
     orientationB = f
     velocityW = g
@@ -209,9 +213,9 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     w2 = LA.inv(geo) @ u
     w2 = np.clip(w2,0, None)
 
-    print("w2", w2)
+    # print("w2", w2)
     w = np.sqrt(w2)
-    print("w", w)
+    # print("w", w)
 
     return w
 
@@ -359,7 +363,7 @@ def applyAction(actionVector, robotId=robotId):
 
 # State Vector
 def getUAVState(robotId=robotId):
-    a, b, c, d, e, f, g, h = p.getLinkState(robotId, -1, 1)
+    a, b, c, d, e, f, g, h = p.getLinkState(robotId, 0, 1)
     position = e # x,y,z
     orientation = f #Quaternion
     velocity = g 
@@ -380,13 +384,41 @@ def visualizeThrottle(m0, m1, m2, m3):
     p.addUserDebugLine([0,0,0], [0, 0, m2/10], [0.0,1.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 1, lifeTime = .1)
     p.addUserDebugLine([0,0,0], [0, 0, m3/10], [0.0,0.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = 2, lifeTime = .1)
 
+def visualizeCenterOfMass():
+    p.addUserDebugLine([0,0,0], computeCenterOfMass(), [1.0,1.0,1.0], lifeTime = .05)
+
+
+def computeCenterOfMass():
+    allLinkPositions=[]    #TODO: Refactor this.
+
+
+    allLinkPositions.append((p.getBasePositionAndOrientation(robotId))[0])
+    for i in range(0, 3):
+        print("testi", i)
+        # a[i], b[i], c[i], d[i], e[i], f[i], g[i], h[i] = p.getLinkState(robotId, 0, 1)
+        allLinkPositions.append((p.getLinkState(robotId, i, 1))[0])
+        # print("a", a)
+        # b.append(a[4])
+    
+    centerOfMass = np.sum(allLinkPositions, axis = 0)/4 #Average x, y, z, of all 4 link CoMs 
+    # print(allLinkPositions[0])
+    # print(allLinkPositions[1])
+    # print(allLinkPositions[2])
+    # print(allLinkPositions[3])
+
+    # print("centerOfMass:", centerOfMass)
+    return centerOfMass
+
+
+
+
 ###################     RUN SIMULATION     #####################
 
 # tailsitterAttitudeControl()
 if __name__ == "__main__":
     print("numjoints: ", p.getNumJoints(robotId))
     simTime = 1000000
-    simDelay = 0.0001
+    simDelay = 0.001
     p.resetDebugVisualizerCamera(15, 45, -30, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
     p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
 
@@ -397,25 +429,24 @@ if __name__ == "__main__":
         # applyAction([0, 0, 0, 0, .9, .9, .9, .9, 1.57, 1.57, 1.57], robotId) #Example applyAction
         # applyAction([0, 0, 0, 0, .3, .1, -.1, -.3, 0, 0, 0], robotId) #Example applyAction
 
-        # if i>500:
+        if i>50:
         #     applyAction([0, 0, 0, 0, -1, -1, -1, -1, 1.2, 1.2, 1.2], robotId) #Example applyAction
             # applyAction([00, 00, 000, 000, 0, 0, 0, 0, 0, 0, .9], robotId) #Example applyAction
 
-        ##### Testing attitude and position controller:
-        des_positionW = [0,0,5]
-        # des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
-        des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
-        des_velocityW = [0,0,0]
-        des_angular_velocityW = [0,0,0]
+            ##### Testing attitude and position controller:
+            des_positionW = [0,0,5]
+            # des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
+            des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
+            des_velocityW = [0,0,0]
+            des_angular_velocityW = [0,0,0]
 
-        robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
+            robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
 
-        w2, w3, w0, w1 = quadAttitudeControl(robotId, robotDesiredPoseWorld) 
-        # visualizeThrottle(m0, m1, m2, m3)
-        # print("m0",m0)
-        applyAction([w0, w1, w2, w3, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
-
-         
-        # print("linkid", p.getLinkState(robotId, 0, 1))
-
+            w2, w3, w0, w1 = quadAttitudeControl(robotId, robotDesiredPoseWorld) 
+            # visualizeThrottle(m0, m1, m2, m3)
+            # print("m0",m0)
+            applyAction([w0, w1, w2, w3, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
+            # print("linkid", p.getLinkState(robotId, 0, 1))
+        computeCenterOfMass()
+        visualizeCenterOfMass()
 
