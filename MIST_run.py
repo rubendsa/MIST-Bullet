@@ -94,8 +94,8 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     K_position = np.eye(3) * np.array([[0, 0, 100]]) # gain for x, y, z components of error vector
     K_velocity = np.eye(3) * np.array([[0, 0, 60]])
 
-    K_rotation = np.eye(3) * np.array([[36, 36, 36]])
-    K_angularVelocity = np.eye(3) * np.array([[30, 30, 30]])
+    K_rotation = np.eye(3) * np.array([[36, 36, 5]])
+    K_angularVelocity = np.eye(3) * np.array([[35, 35, 5]])
 
     kf = 2
     km = .5
@@ -219,10 +219,10 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # print("u:", u)
 
     w2 = LA.inv(geo) @ u
-    w2 = np.clip(w2,0, None)
-
+    # w2 = np.clip(w2,0, None)
+    w = w2
     # print("w2", w2)
-    w = np.sqrt(w2)
+    # w = np.sqrt(w2)
     # print("w", w)
 
     return w
@@ -329,15 +329,14 @@ def applyAction(actionVector, robotId=robotId):
     Kf = 2 # TODO: Put this in an object. 
     Km = .5
 
-    Fm0 = Kf * w0**2 
-    Fm1 = Kf * w1**2  
-    Fm2 = Kf * w2**2 
-    Fm3 = Kf * w3**2 
-
-    Mm0 = Km * w0**2
-    Mm1 = Km * w1**2
-    Mm2 = Km * w2**2
-    Mm3 = Km * w3**2
+    Fm0 = Kf * w0 
+    Fm1 = Kf * w1  
+    Fm2 = Kf * w2 
+    Fm3 = Kf * w3
+    Mm0 = Km * w0
+    Mm1 = Km * w1
+    Mm2 = Km * w2
+    Mm3 = Km * w3
 
     # Thrust for each Motor
     p.applyExternalForce(robotId, -1, [0,0, Fm0], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
@@ -444,7 +443,7 @@ if __name__ == "__main__":
             ##### Testing attitude and position controller:
             des_positionW = [0,0,5]
             # des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
-            des_orientationW = p.getQuaternionFromEuler([.5,0,0]) # [roll, pitch, yaw]
+            des_orientationW = p.getQuaternionFromEuler([0,-.3,0]) # [roll, pitch, yaw]
             des_velocityW = [0,0,0]
             des_angular_velocityW = [0,0,0]
 
