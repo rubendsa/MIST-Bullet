@@ -91,14 +91,21 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # K_position = np.eye(3) * np.array([[30, 30, 100]]) # gain for x, y, z components of error vector
     # K_velocity = np.eye(3) * np.array([[20, 20, 60]])
 
-    K_position = np.eye(3) * np.array([[0, 0, 100]]) # gain for x, y, z components of error vector
-    K_velocity = np.eye(3) * np.array([[0, 0, 60]])
+    K_position = np.eye(3) * np.array([[100, 100, 100]]) # gain for x, y, z components of error vector
+    K_velocity = np.eye(3) * np.array([[10, 10, 60]])
 
-    K_rotation = np.eye(3) * np.array([[36, 36, 5]])
-    K_angularVelocity = np.eye(3) * np.array([[35, 35, 5]])
+    # K_rotation = np.eye(3) * np.array([[50, 50, 5]])
+    # K_angularVelocity = np.eye(3) * np.array([[40, 40, 5]])
+    # K_rotation = np.eye(3) * np.array([[3000, 3000, 3000]])
+    # K_angularVelocity = np.eye(3) * np.array([[1000, 1000, 1000]])
+    K_rotation = np.eye(3) * np.array([[2000, 2000, 2000]])
+    K_angularVelocity = np.eye(3) * np.array([[1000, 1000, 1000]])
 
-    kf = 2
-    km = .5
+    Kf = 1
+    Km = .1
+
+    # Kf = 8.54858e-06
+    # Km = kf * .06
     L = .28
 
     mass = 4 #Mass in [kg]
@@ -193,9 +200,9 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # print("- K_angularVelocity @ eW.T", - K_angularVelocity @ eW.T)
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
-    u1 = np.clip(u1, -100.0, 100.0)
+    u1 = np.clip(u1, 0.0, 100.0)
     u24 = np.clip(u24, -20.0, 20.0)
-    
+    print("u24", u24) 
     
     # print("u1:", u1)
     # print("des_F", des_F)
@@ -209,10 +216,10 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     # print("u:", u)
 
-    geo = np.array([[kf, kf, kf, kf],
-                    [0, kf*L, 0, -kf*L],
-                    [-kf*L, 0, kf*L, 0],
-                    [km, -km, km, -km]])
+    geo = np.array([[Kf, Kf, Kf, Kf],
+                    [0, Kf*L, 0, -Kf*L],
+                    [-Kf*L, 0, Kf*L, 0],
+                    [Km, -Km, Km, -Km]])
     
     # Compute angular velocities
     # print("LA.inv(geo):", LA.inv(geo))
@@ -326,8 +333,11 @@ def applyAction(actionVector, robotId=robotId):
     w0, w1, w2, w3, c0, c1, c2, c3, h0, h1, h2 = actionVector
 
     print("w0", w0)
-    Kf = 2 # TODO: Put this in an object. 
-    Km = .5
+    Kf = 1 # TODO: Put this in an object. 
+    Km = .1
+
+    # Kf = 8.54858e-06
+    # Km = Kf * .06
 
     Fm0 = Kf * w0 
     Fm1 = Kf * w1  
@@ -345,17 +355,21 @@ def applyAction(actionVector, robotId=robotId):
     p.applyExternalForce(robotId, 2, [0,0, Fm3], [0,0,0], 1) #Apply m3 force[N] on link3, w.r.t. local frame
 
     # Torque for each Motor
-    p.applyExternalTorque(robotId, -1, [0,0, Mm0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 0, [0,0, -Mm1], 1) 
-    p.applyExternalTorque(robotId, 1, [0,0, Mm2], 1) 
-    p.applyExternalTorque(robotId, 2, [0,0, -Mm3], 1) 
+    # p.applyExternalTorque(robotId, -1, [0,0, Mm0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    # p.applyExternalTorque(robotId, 0, [0,0, -Mm1], 1) 
+    # p.applyExternalTorque(robotId, 1, [0,0, Mm2], 1) 
+    # p.applyExternalTorque(robotId, 2, [0,0, -Mm3], 1) 
+    p.applyExternalTorque(robotId, -1, [0,0, -Mm0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 0, [0,0, Mm1], 1) 
+    p.applyExternalTorque(robotId, 1, [0,0, -Mm2], 1) 
+    p.applyExternalTorque(robotId, 2, [0,0, Mm3], 1) 
 
 
     # Visual of propeller spinning (not critical)
     p.setJointMotorControl2(robotId, propIds[0], p.VELOCITY_CONTROL, targetVelocity=w0*100, force=1000) 
-    p.setJointMotorControl2(robotId, propIds[1], p.VELOCITY_CONTROL, targetVelocity=w1*100, force=1000)
+    p.setJointMotorControl2(robotId, propIds[1], p.VELOCITY_CONTROL, targetVelocity=-w1*100, force=1000)
     p.setJointMotorControl2(robotId, propIds[2], p.VELOCITY_CONTROL, targetVelocity=w2*100, force=1000)
-    p.setJointMotorControl2(robotId, propIds[3], p.VELOCITY_CONTROL, targetVelocity=w3*100, force=1000)
+    p.setJointMotorControl2(robotId, propIds[3], p.VELOCITY_CONTROL, targetVelocity=-w3*100, force=1000)
     
     # Control surface deflection [rads]
     p.setJointMotorControl2(robotId, ctrlSurfIds[0], p.POSITION_CONTROL, targetPosition=c0, force=1000)
@@ -391,6 +405,13 @@ def visualizeThrottle(m0, m1, m2, m3):
     p.addUserDebugLine([0,0,0], [0, 0, m2/10], [0.0,1.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 1, lifeTime = .1)
     p.addUserDebugLine([0,0,0], [0, 0, m3/10], [0.0,0.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = 2, lifeTime = .1)
 
+def visualizeLinkFrame(link):
+    p.addUserDebugLine([0,0,0], [10, 0, 0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = link, lifeTime = .1)
+    p.addUserDebugLine([0,0,0], [0, 10, 0], [0.0,1.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = link, lifeTime = .1)
+    p.addUserDebugLine([0,0,0], [0, 0, 10], [0.0,0.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = link, lifeTime = .1)
+
+
+
 def visualizeCenterOfMass():
     p.addUserDebugLine([0,0,0], computeCenterOfMass(), [1.0,1.0,1.0], lifeTime = .05)
 
@@ -425,9 +446,10 @@ def computeCenterOfMass():
 if __name__ == "__main__":
     print("numjoints: ", p.getNumJoints(robotId))
     simTime = 1000000
-    simDelay = 0.00001
-    p.resetDebugVisualizerCamera(15, 45, -30, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
-    p.resetBasePositionAndOrientation(robotId, [0,0,10], [0,0,0,1]) # Staring position of robot
+    simDelay = 0.001
+    p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
+    p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
+    # p.resetBasePositionAndOrientation(robotId, [0,0,10], [0,0,0,1]) # Staring position of robot
 
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
@@ -436,24 +458,29 @@ if __name__ == "__main__":
         # applyAction([0, 0, 0, 0, .9, .9, .9, .9, 1.57, 1.57, 1.57], robotId) #Example applyAction
         # applyAction([0, 0, 0, 0, .3, .1, -.1, -.3, 0, 0, 0], robotId) #Example applyAction
 
-        if i>50:
+        if i>100:
         #     applyAction([0, 0, 0, 0, -1, -1, -1, -1, 1.2, 1.2, 1.2], robotId) #Example applyAction
             # applyAction([00, 00, 000, 000, 0, 0, 0, 0, 0, 0, .9], robotId) #Example applyAction
 
             ##### Testing attitude and position controller:
             des_positionW = [0,0,5]
             # des_orientationW = [0, 0, 0, 1] # [x, y, z, w] quaternion
-            des_orientationW = p.getQuaternionFromEuler([0,-.3,0]) # [roll, pitch, yaw]
+            des_orientationW = p.getQuaternionFromEuler([0,0,0]) # [roll, pitch, yaw]
             des_velocityW = [0,0,0]
             des_angular_velocityW = [0,0,0]
 
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
 
-            w2, w3, w0, w1 = quadAttitudeControl(robotId, robotDesiredPoseWorld) 
-            # visualizeThrottle(m0, m1, m2, m3)
+            # w2, w3, w0, w1 = quadAttitudeControl(robotId, robotDesiredPoseWorld) 
+            w1, w2, w3, w0 = quadAttitudeControl(robotId, robotDesiredPoseWorld) 
+            # visualizeThrottle(0, 0, 0, 100 )
             # print("m0",m0)
             applyAction([w0, w1, w2, w3, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
-            # print("linkid", p.getLinkState(robotId, 0, 1))
+            # applyAction([0, 0, 0, 100, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
+
+            
+            print("linkid", p.getEulerFromQuaternion(p.getLinkState(robotId, 0, 1)[1]))
         computeCenterOfMass()
         # visualizeCenterOfMass()
+        # visualizeLinkFrame(0)
 
