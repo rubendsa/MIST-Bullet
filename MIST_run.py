@@ -234,7 +234,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # print("u:", u)
 
     w2 = LA.inv(geo) @ u
-    # w2 = np.clip(w2,0, None)
+    w2 = np.clip(w2,0, None)
     w = w2
     # print("w2", w2)
     # w = np.sqrt(w2)
@@ -361,7 +361,8 @@ def computeCenterOfMass():
 if __name__ == "__main__":
     simTime = 1000000
     simDelay = 0.001
-    p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
+    # p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
+    p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
     p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
     # p.resetBasePositionAndOrientation(robotId, [0,0,5], [0,0,0,1]) # Staring position of robot
 
@@ -389,9 +390,11 @@ if __name__ == "__main__":
             applyAction([w0, w1, w2, w3, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
             # applyAction([0, 0, 0, 100, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
 
-        computeCenterOfMass()
-        # visualizeCenterOfMass()
-        # visualizeLinkFrame(0)
-        # visualizeThrottle(w0, w1, w2, w3)
+            computeCenterOfMass()
+
+            # visualizeCenterOfMass()
+            # visualizeLinkFrame(0)
+            # visualizeThrottle(w0, w1, w2, w3)
+        p.resetDebugVisualizerCamera(8, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
 
 
