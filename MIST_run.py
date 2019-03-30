@@ -362,8 +362,8 @@ if __name__ == "__main__":
     simTime = 1000000
     simDelay = 0.001
     p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
-    # p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
-    p.resetBasePositionAndOrientation(robotId, [0,0,5], [0,0,0,1]) # Staring position of robot
+    p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
+    # p.resetBasePositionAndOrientation(robotId, [0,0,5], [0,0,0,1]) # Staring position of robot
 
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
@@ -382,14 +382,12 @@ if __name__ == "__main__":
         if i>100:
             des_positionW = [0,0,5]
         
-        if i>1000:
-            des_positionW = [0,-.03*(i-1000),5]
 
-        robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
-        print("des_position", des_positionW)
-        w1, w2, w3, w0 = quadAttitudeControl(robotId, robotDesiredPoseWorld) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-        applyAction([w0, w1, w2, w3, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
-        # applyAction([0, 0, 0, 100, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
+            robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
+            print("des_position", des_positionW)
+            w1, w2, w3, w0 = quadAttitudeControl(robotId, robotDesiredPoseWorld) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            applyAction([w0, w1, w2, w3, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
+            # applyAction([0, 0, 0, 100, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
 
         computeCenterOfMass()
         # visualizeCenterOfMass()
