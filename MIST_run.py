@@ -209,8 +209,8 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # print("- K_angularVelocity @ eW.T", - K_angularVelocity @ eW.T)
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
-    u1 = np.clip(u1, 0.0, 100.0)
-    u24 = np.clip(u24, -20.0, 20.0)
+    u1 = np.clip(u1, 0.0, 200.0)
+    u24 = np.clip(u24, -100.0, 100.0)
     
     # print("u1:", u1)
     # print("des_F", des_F)
@@ -395,6 +395,6 @@ if __name__ == "__main__":
             # visualizeCenterOfMass()
             # visualizeLinkFrame(0)
             # visualizeThrottle(w0, w1, w2, w3)
-        p.resetDebugVisualizerCamera(8, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
+        p.resetDebugVisualizerCamera(15, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
 
 
