@@ -51,7 +51,7 @@ def run_ag_tree(sess, value_f, policy_f, env, rollout_len=400, num_initials_traj
     for _ in range(num_initials_trajs):
         start_states.append(random_state())
 
-    # print("Initial Rollouts")
+    print("Initial Rollouts")
     env.do_rollouts(sess, no_noise, initial_trajectories, start_states, rollout_len) 
 
     terminal_states = get_terminal_states_of_traj_deque(initial_trajectories)
@@ -75,13 +75,13 @@ def run_ag_tree(sess, value_f, policy_f, env, rollout_len=400, num_initials_traj
         start_state_juncts.append(sampled_state)
         indx.append([sampled_traj_idx, sampled_state_idx])
 
-    # print("Junction Rollouts")
+    print("Junction Rollouts")
     env.do_rollouts(sess, noise, junction_trajectories, start_state_juncts, rollout_len)
 
     for i in range(num_branches):
         value_junction[0][i] = initial_trajectories[indx[i][0]].values[indx[i][1]]
 
-    # print("Branch Rollouts")
+    print("Branch Rollouts")
     for depth in range(1, noise_depth + 1): #TODO
         nthState = deque()
         for jtraj in junction_trajectories:
@@ -165,7 +165,7 @@ def run_ag_tree(sess, value_f, policy_f, env, rollout_len=400, num_initials_traj
         beta = np.sqrt(7000.0 / np.dot(natural_gradient_dir, jacobianQ_wrt_param))
         policy_learning_rate = min(policy_learning_rate, beta)
 
-        param_update -= ((policy_learning_rate * natural_gradient_dir) / data_len) #prev +=
+        param_update += ((policy_learning_rate * natural_gradient_dir) / data_len) 
   
     new_params = np.reshape(sess.run(policy_f.all_param), (1,-1)) + np.reshape(param_update, (1, -1)) #reshapes are necessary so the feed to param_assign works, don't change
     sess.run(policy_f.all_parameters_assign_all_op, feed_dict={policy_f.param_assign_placeholder:new_params})

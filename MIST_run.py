@@ -8,8 +8,8 @@ timeBeginPeriod = windll.winmm.timeBeginPeriod #new
 timeBeginPeriod(1) #new
 
 # Initalization Code
-physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
-# physicsClient = p.connect(p.DIRECT)
+# physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
+physicsClient = p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
 p.setGravity(0,0,-9.81)
 # planeId = p.loadURDF("plane.urdf")
