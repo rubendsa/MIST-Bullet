@@ -7,7 +7,7 @@ from enum import Enum
 from policy_f import PolicyFunction
 from value_f import ValueFunction
 from ag_tree import run_ag_tree
-from environment import Environment
+from environment import EnvironmentMananger
 from nn_utils import restore_from_lowest_cost, restore_from_highest_cost, save_model, save_most_recent, restore_most_recent
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
@@ -30,7 +30,7 @@ def run_experiment(load_type, max_time, save_dir):
     sess.run(init)
     saver = tf.train.Saver()
 
-    env = Environment(policy_f, num_instances=10)
+    env = EnvironmentMananger(n_instances=10)
 
     best_cost = 100000000
     if load_type == LoadType.CREATE_NEW_MODEL:
@@ -49,7 +49,7 @@ def run_experiment(load_type, max_time, save_dir):
         # i += 1
         # print("loop {}".format(i))
         start = time.time()
-        current_cost = run_ag_tree(sess, value_f, policy_f, env, rollout_len=500, num_initials_trajs=100, num_branches=200, noise_depth=2, discount_factor=0.99)
+        current_cost = run_ag_tree(sess, value_f, policy_f, env, rollout_len=1500, num_initials_trajs=100, num_branches=200, noise_depth=2, discount_factor=0.99)
         end = time.time()
         # print("Time for one loop is {}".format(end-start))
         if current_cost < best_cost:
@@ -64,6 +64,8 @@ def run_experiment(load_type, max_time, save_dir):
         if duration > max_time:
             print("End of experiment, time duration reached")
             break 
+        
+    env.terminate_processes()
 
 
 if __name__ == "__main__":

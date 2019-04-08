@@ -1,6 +1,6 @@
 import time
 import tensorflow as tf
-from multiprocessing import Process, Queue, Manager
+import multiprocessing
 from nn_utils import restore_most_recent
 from policy_f import PolicyFunction
 from collections import deque
@@ -69,177 +69,78 @@ def random_state():
     state_out = State(pos, v, rot_v, q=q)
     return state_out
 
+class ProcessInput():
 
- #BIG UGLY
-def one_rollout_process(noise, start_state, traj_list, rollout_len=1000):
-    env = PyBulletInstance()
+    def __init__(self, noise, start_state, rollout_len):
+        self.noise = noise 
+        self.start_state = start_state 
+        self.rollout_len = rollout_len 
 
-    policy_f = PolicyFunction(input_dim=18, output_dim=4)
-    save_dir = "C:/Users/user/Transformation/MIST_Bullet/models"
+class PyBulletProcess(multiprocessing.Process):
+    
+    def __init__(self, input_queue, output_queue):
+        multiprocessing.Process.__init__(self)
+        self.input_queue = input_queue 
+        self.output_queue = output_queue 
 
-    sess = tf.Session()
-    init=tf.global_variables_initializer()
-    sess.run(init)
-    saver = tf.train.Saver()
+    def run(self):
+        env = PyBulletInstance()
+        policy_f = PolicyFunction(input_dim=18, output_dim=4)
+        save_dir = "C:/Users/user/Transformation/MIST_Bullet/models"
 
-    restore_most_recent(save_dir, saver, sess)
+        sess = tf.Session() 
+        init = tf.global_variables_initializer()
+        sess.run(init)
+        saver = tf.train.Saver()
 
-    start_state = State.from_arr(start_state) 
-    current_state = start_state
-    traj = Trajectory()
-    # print(start_state)
-    env.set_to_pos_and_q(start_state.pos, start_state.q)
-    x = 0
-    for _ in range (rollout_len):
-        x += 1
-        pos, q, v, ang_v = env.getUAVState()
+        while(True):
+            pi = self.input_queue.get()
+            current_state = pi.start_state  
+            traj = Trajectory()
+            env.set_to_pos_and_q(current_state.pos, current_state.q)
+            restore_most_recent(save_dir, saver, sess)
 
-        state = State(pos, v, ang_v, euler=None, q=q)
-        action = policy_f.forward(sess, np.reshape(state.as_arr(), (1, 18))) #(1,4)
-        action = np.reshape(action, [-1])
-        current_noise = noise.get_noise()
-        current_action = action + current_noise
+            for _ in range(pi.rollout_len):
+                pos, q, v, ang_v = env.getUAVState()
 
-        current_action = np.concatenate((current_action, [0, 0, 0, 0, 1.57, 1.57, 1.57]))
-        env.applyAction(current_action)
-        env.step()
+                state = State(pos, v, ang_v, euler=None, q=q)
+                action = policy_f.forward(sess, np.reshape(state.as_arr(), (1, 18))) #(1,4)
+                action = np.reshape(action, [-1])
+                current_noise = pi.noise.get_noise()
+                current_action = action + current_noise
+
+                current_action = np.concatenate((current_action, [0, 0, 0, 0, 1.57, 1.57, 1.57]))
+                env.applyAction(current_action)
+                env.step()
+                
+                current_cost = calc_cost(state, action)
+                traj.push_back(state.as_arr(), action, current_noise, current_cost)
+            
+            self.output_queue.put(traj)
+            self.input_queue.task_done()
+
+class EnvironmentMananger():
+    def __init__(self, n_instances=20):
+        self.n_instances = n_instances
+        self.task_queue = multiprocessing.JoinableQueue()
+        self.result_queue = multiprocessing.Queue()
+        self.processes = [PyBulletProcess(self.task_queue, self.result_queue) for _ in range(self.n_instances)]
+        for p in self.processes:
+            p.start()
+    
+    def terminate_processes(self):
+        for p in self.processes:
+            p.terminate()
+    
+    def do_rollouts(self, noise, traj_dequeue, start_states, rollout_len=10000):
+        num_sims_to_run = len(start_states)
+        for state in start_states:
+            pi = ProcessInput(noise, state, rollout_len)
+            self.task_queue.put(pi)
         
-        current_cost = calc_cost(state, action)
-        traj.push_back(state.as_arr(), action, current_noise, current_cost)
-    traj_list.append(traj)
+        self.task_queue.join()
 
-
-class Environment():
-
-    def __init__(self, policy_f, num_instances=20):
-        self.policy_f = policy_f
-        self.num_instances = num_instances
-        # self.envs = []
-        # for _ in range(self.num_instances):
-        #     self.envs.append(PyBulletInstance())
-
-    # @staticmethod
-    # def one_rollout(env, sess, noise, policy_f, start_state, traj_deque, rollout_len=1000):
-    #     current_state = start_state 
-    #     traj = Trajectory()
-    #     env.set_to_pos_and_q(start_state.pos, start_state.q)
-    #     for _ in range (rollout_len):
-    #         pos, q, v, ang_v = env.getUAVState()
-
-    #         state = State(pos, v, ang_v, euler=None, q=q)
-    #         action = policy_f.forward(sess, np.reshape(state.as_arr(), (1, 18))) #(1,4)
-    #         action = np.reshape(action, [-1])
-    #         current_noise = noise.get_noise()
-    #         current_action = action + current_noise
-
-    #         current_action = np.concatenate((current_action, [0, 0, 0, 0, 1.57, 1.57, 1.57]))
-    #         env.applyAction(current_action)
-    #         env.step()
-            
-    #         current_cost = calc_cost(state, action)
-    #         traj.push_back(state.as_arr(), action, current_noise, current_cost)
-    #     # traj_deque.append(traj)
-    #     return 0
-
-    #ALL HAIL THE GREAT SPAGHETTI FUNCTION
-    def do_rollouts(self, sess, noise, traj_deque, start_states, rollout_len=10000):
-        manager = Manager()
-        traj_list = manager.list()
-        #attempt 4
-        while len(start_states) > 0:
-            processes = []
-            for i in range(self.num_instances):
-                if len(start_states) > 0:
-                    state_to_pass = start_states.pop().as_arr()
-                    # print("Flag 1")
-                    # print(state_to_pass)
-                    pr = Process(target=one_rollout_process, args=(noise, state_to_pass, traj_list, rollout_len))
-                    pr.start()
-                    processes.append(pr)
-                    # print(collected_trajectories)
-            
-            # print("ahh")
-            for x in processes:
-                x.join()
-            # print("ree")
-        for el in traj_list:
-            traj_deque.append(el)
-        #attmempt 3
-        # while len(start_states) > 0:
-        #     processes = []
-        #     # i = 0
-        #     for env in self.envs:
-        #         if len(start_states) > 0:
-        #             pr = Process(target=Environment.one_rollout, args=(env, sess, noise, self.policy_f, start_states.pop(), traj_deque, rollout_len))
-        #             pr.start()
-        #             processes.append(pr)
-        #             # i += 1
-
-        #     # print(i)
-        #     for x in processes:
-        #         x.join()
-
-
-        #Attempt 2
-        # while len(start_states) > 0:
-        #     current_trajectories = []
-        #     for env in self.envs: #Fill envs
-        #         if len(start_states) > 0:
-        #             current_trajectories.append(Trajectory())
-        #             next_start = start_states.pop()
-        #             env.set_to_pos_and_q(next_start.pos, next_start.q)
-        #             env.currently_used = True 
-
-        #     for _ in range(rollout_len):
-        #         states = []
-        #         for env in self.envs:
-        #             if env.currently_used:
-        #                 pos, q, v, ang_v = env.getUAVState()
-        #                 state = State(pos, v , ang_v, euler=None, q=q)
-        #                 states.append(state)
-                
-        #         batch_states = [x.as_arr() for x in states]
-        #         batch_actions = self.policy_f.forward(sess, batch_states)
-        #         noises = []
-        #         costs = []
-        #         for i, action in enumerate(batch_actions):
-        #             current_noise = noise.get_noise()
-        #             noises.append(current_noise)
-        #             current_action = action + current_noise
-        #             current_action = np.concatenate((current_action, [0, 0, 0, 0, 1.57, 1.57, 1.57]))
-        #             self.envs[i].applyAction(current_action)
-        #             self.envs[i].step()
-        #             costs.append(calc_cost(states[i], action))
-                
-        #         for i, traj in enumerate(current_trajectories):
-        #             # print("ah")
-        #             # print(batch_states[i], batch_actions[i], noises[i], costs[i])
-        #             traj.push_back(batch_states[i], batch_actions[i], noises[i], costs[i])
-
-        #     for traj in current_trajectories:
-        #         traj_deque.append(traj)
-
-        #     for env in self.envs: #reset env flags
-        #         env.currently_used = False
-
-        #Attempt 1
-        # for start_state in start_states:
-        #     current_state = start_state 
-        #     current_traj = Trajectory()
-        #     set_to_pos_and_q(start_state.pos, start_state.q)
-        #     for _ in range (rollout_len):
-        #         pos, q, v, ang_v = getUAVState()
-        #         state = State(pos, v, ang_v, euler=None, q=q)
-        #         action = self.policy_f.forward(sess, state.as_arr()) #(1,4)
-        #         action = np.reshape(action, [-1])
-        #         # print(action)
-        #         current_noise = noise.get_noise()
-        #         current_action = action + current_noise
-
-        #         current_action = np.concatenate((current_action, [0, 0, 0, 0, 1.57, 1.57, 1.57]))
-        #         applyAction(current_action)
-        #         step()
-                
-        #         current_cost = calc_cost(state, action)
-        #         current_traj.push_back(state.as_arr(), action, current_noise, current_cost)
-        #     traj_deque.append(current_traj)
+        for _ in range(len(start_states)):
+            traj_dequeue.append(self.result_queue.get()) #this is the only way to do it
+        # while not self.result_queue.empty():
+        #     traj_dequeue.append(self.result_queue.get()) #this doesn't work as the output_queue is not necessary synced

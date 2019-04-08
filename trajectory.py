@@ -86,6 +86,9 @@ class Trajectory():
 
             decayedTerminalValue *= self.disc_fctr
 
+    def __str__(self):
+        return "Trajectory of size {}\n".format(self.size())
+
 
 
 
