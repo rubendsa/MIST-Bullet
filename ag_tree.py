@@ -52,7 +52,7 @@ def run_ag_tree(sess, value_f, policy_f, env, rollout_len=400, num_initials_traj
         start_states.append(random_state())
 
     # print("Initial Rollouts")
-    env.do_rollouts(no_noise, initial_trajectories, start_states, rollout_len) 
+    env.do_rollouts(no_noise, initial_trajectories, start_states, rollout_len, load_model=True) 
 
     terminal_states = get_terminal_states_of_traj_deque(initial_trajectories)
     terminal_states = np.reshape(terminal_states, [-1, 18])
@@ -76,7 +76,7 @@ def run_ag_tree(sess, value_f, policy_f, env, rollout_len=400, num_initials_traj
         indx.append([sampled_traj_idx, sampled_state_idx])
 
     # print("Junction Rollouts")
-    env.do_rollouts(noise, junction_trajectories, start_state_juncts, rollout_len)
+    env.do_rollouts(noise, junction_trajectories, start_state_juncts, rollout_len, load_model=False)
 
     for i in range(num_branches):
         value_junction[0][i] = initial_trajectories[indx[i][0]].values[indx[i][1]]
@@ -87,7 +87,7 @@ def run_ag_tree(sess, value_f, policy_f, env, rollout_len=400, num_initials_traj
         for jtraj in junction_trajectories:
             branch_start_state = State.from_arr(jtraj.states[depth])
             nthState.append(branch_start_state) 
-        env.do_rollouts(no_noise, branch_trajectories[depth - 1], nthState, rollout_len)
+        env.do_rollouts(no_noise, branch_trajectories[depth - 1], nthState, rollout_len, load_model=False)
         branch_terminal_states = get_terminal_states_of_traj_deque(branch_trajectories[depth-1])
         branch_terminal_states = np.reshape(branch_terminal_states, [-1, 18]) #bad 
         branch_terminal_values = value_f.forward(sess, branch_terminal_states)

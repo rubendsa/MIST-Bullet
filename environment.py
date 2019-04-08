@@ -71,10 +71,11 @@ def random_state():
 
 class ProcessInput():
 
-    def __init__(self, noise, start_state, rollout_len):
+    def __init__(self, noise, start_state, rollout_len, load_model):
         self.noise = noise 
         self.start_state = start_state 
         self.rollout_len = rollout_len 
+        self.load_model = load_model
 
 class PyBulletProcess(multiprocessing.Process):
     
@@ -98,7 +99,8 @@ class PyBulletProcess(multiprocessing.Process):
             current_state = pi.start_state  
             traj = Trajectory()
             env.set_to_pos_and_q(current_state.pos, current_state.q)
-            restore_most_recent(save_dir, saver, sess)
+            if pi.load_model:
+                restore_most_recent(save_dir, saver, sess)  
 
             for _ in range(pi.rollout_len):
                 pos, q, v, ang_v = env.getUAVState()
@@ -132,10 +134,10 @@ class EnvironmentMananger():
         for p in self.processes:
             p.terminate()
     
-    def do_rollouts(self, noise, traj_dequeue, start_states, rollout_len=10000):
+    def do_rollouts(self, noise, traj_dequeue, start_states, rollout_len=10000, load_model=True):
         num_sims_to_run = len(start_states)
         for state in start_states:
-            pi = ProcessInput(noise, state, rollout_len)
+            pi = ProcessInput(noise, state, rollout_len, load_model)
             self.task_queue.put(pi)
         
         self.task_queue.join()
