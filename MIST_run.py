@@ -210,7 +210,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
     u1 = np.clip(u1, 0.0, 100.0)
-    u24 = np.clip(u24, -20.0, 20.0)
+    u24 = np.clip(u24, -18.0, 18.0)
     
     # print("u1:", u1)
     # print("des_F", des_F)
@@ -221,7 +221,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # print("u24:", u24)
     u = np.concatenate((u1, u24))
     # print("u:", u)
-
+    # print("u1", u1, "u24", u24)
     # print("u:", u)
 
     geo = np.array([[Kf, Kf, Kf, Kf],
@@ -238,7 +238,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     w = w2
     # print("w2", w2)
     # w = np.sqrt(w2)
-    # print("w", w)
+    print("w", w)
 
     return w
 
@@ -344,6 +344,7 @@ def computeCenterOfMass():
         # b.append(a[4])
     
     centerOfMass = np.sum(allLinkPositions, axis = 0)/4 #Average x, y, z, of all 4 link CoMs 
+    centerOfMass[2] = centerOfMass[2] -.01 # Z intertial offset used in the urdf file
     # print(allLinkPositions[0])
     # print(allLinkPositions[1])
     # print(allLinkPositions[2])
@@ -363,8 +364,10 @@ if __name__ == "__main__":
     simDelay = 0.001
     # p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
     p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
+    # p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
+    
     p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
-    # p.resetBasePositionAndOrientation(robotId, [0,0,5], [0,0,0,1]) # Staring position of robot
+    p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
 
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
@@ -381,20 +384,21 @@ if __name__ == "__main__":
         des_angular_velocityW = [0,0,0]
 
         if i>100:
-            des_positionW = [0,0,5]
+            des_positionW = [0,0,6]
         
 
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
-            print("des_position", des_positionW)
             w1, w2, w3, w0 = quadAttitudeControl(robotId, robotDesiredPoseWorld) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-            applyAction([w0, w1, w2, w3, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
+            applyAction([w0, w1, w2, w3, 0, 0, 0, 0, 1.57, 1.57, 1.57], robotId)
             # applyAction([0, 0, 0, 100, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
 
-            computeCenterOfMass()
+            # computeCenterOfMass()
 
             # visualizeCenterOfMass()
             # visualizeLinkFrame(0)
             # visualizeThrottle(w0, w1, w2, w3)
-        p.resetDebugVisualizerCamera(8, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
+        # p.resetDebugVisualizerCamera(5, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
+        # p.addUserDebugLine([0,0,0], (p.getLinkState(robotId, 1, 1))[0], [1.0,1.0,1.0], lifeTime = .05)
+        # p.addUserDebugLine([0,0,0], [-.0, 0, .0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0, lifeTime = .1)
 
 
