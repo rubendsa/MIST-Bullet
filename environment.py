@@ -79,15 +79,15 @@ class ProcessInput():
 
 class PyBulletProcess(multiprocessing.Process):
     
-    def __init__(self, input_queue, output_queue):
+    def __init__(self, input_queue, output_queue, save_dir):
         multiprocessing.Process.__init__(self)
         self.input_queue = input_queue 
         self.output_queue = output_queue 
+        self.save_dir = save_dir
 
     def run(self):
         env = PyBulletInstance()
         policy_f = PolicyFunction(input_dim=18, output_dim=4)
-        save_dir = "C:/Users/user/Transformation/MIST_Bullet/models"
 
         sess = tf.Session() 
         init = tf.global_variables_initializer()
@@ -100,7 +100,7 @@ class PyBulletProcess(multiprocessing.Process):
             traj = Trajectory()
             env.set_to_pos_and_q(current_state.pos, current_state.q)
             if pi.load_model:
-                restore_most_recent(save_dir, saver, sess)  
+                restore_most_recent(self.save_dir, saver, sess)  
 
             for _ in range(pi.rollout_len):
                 pos, q, v, ang_v = env.getUAVState()
@@ -117,16 +117,20 @@ class PyBulletProcess(multiprocessing.Process):
                 
                 current_cost = calc_cost(state, action)
                 traj.push_back(state.as_arr(), action, current_noise, current_cost)
-            
+            #TODO actually map out this whole spaghetti on the whiteboard
+            #At this point the sim has terminated due to timeout (There's actually no other termination case but w/e)
+            #RAI arbitrarily has termValue as 1.5
+            traj.terminate_traj_and_update_val(state.as_arr(), action, 1.5, 0.99) #todo actual discount factor
+            #
             self.output_queue.put(traj)
             self.input_queue.task_done()
 
 class EnvironmentMananger():
-    def __init__(self, n_instances=20):
+    def __init__(self, n_instances=20, save_dir=None):
         self.n_instances = n_instances
         self.task_queue = multiprocessing.JoinableQueue()
         self.result_queue = multiprocessing.Queue()
-        self.processes = [PyBulletProcess(self.task_queue, self.result_queue) for _ in range(self.n_instances)]
+        self.processes = [PyBulletProcess(self.task_queue, self.result_queue, save_dir) for _ in range(self.n_instances)]
         for p in self.processes:
             p.start()
     

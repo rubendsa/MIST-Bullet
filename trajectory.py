@@ -57,6 +57,16 @@ class Trajectory():
         
     def size(self):
         return len(self.states)
+
+    #Manually average costs with consideration for None values
+    def avg_cost(self):
+        count = 0
+        total = 0
+        for cost in self.costs:
+            if cost is not None:
+                count += 1
+                total += cost 
+        return total / count
     
     def update_val_traj_with_new_terminal_val(self, terminal_val, disc_fctr):
         self.terminal_val = terminal_val

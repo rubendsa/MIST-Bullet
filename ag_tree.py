@@ -173,8 +173,8 @@ def run_ag_tree(sess, value_f, policy_f, env, rollout_len=400, num_initials_traj
     total_costs = 0
     avg_cost = 0
     for traj in initial_trajectories:
-        avg_cost += np.sum(traj.costs)
-        total_costs +=1
+        avg_cost += traj.avg_cost()
+        total_costs += 1
     avg_costs = avg_cost / total_costs
     print("Average Costs -> {} at time {}".format(avg_costs, datetime.datetime.now()))
     return avg_costs

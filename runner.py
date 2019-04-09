@@ -1,6 +1,8 @@
 import tensorflow as tf
 import time
 import os 
+import signal
+import sys
 
 from enum import Enum
 
@@ -12,13 +14,22 @@ from nn_utils import restore_from_lowest_cost, restore_from_highest_cost, save_m
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 
+env = None
+
 class LoadType(Enum):
     CREATE_NEW_MODEL = 1
     LOAD_HIGHEST_COST = 2
     LOAD_LOWEST_COST = 3
     LOAD_MOST_RECENT = 4
 
+def signal_handler(sig, frame):
+    print("Ctrl+C, exiting")
+    env.terminate_processes()
+    sys.exit(0)
+
+
 def run_experiment(load_type, max_time, save_dir):
+    global env
     start_time = time.time()
     OBS_SIZE = 18
     ACTION_SIZE = 4
@@ -29,8 +40,6 @@ def run_experiment(load_type, max_time, save_dir):
     init=tf.global_variables_initializer()
     sess.run(init)
     saver = tf.train.Saver()
-
-    env = EnvironmentMananger(n_instances=10)
 
     best_cost = 100000000
     if load_type == LoadType.CREATE_NEW_MODEL:
@@ -44,12 +53,14 @@ def run_experiment(load_type, max_time, save_dir):
 
     save_most_recent(save_dir, saver, sess)
 
+    env = EnvironmentMananger(n_instances=10, save_dir=save_dir)
+
     while(True):
         
         # i += 1
         # print("loop {}".format(i))
         start = time.time()
-        current_cost = run_ag_tree(sess, value_f, policy_f, env, rollout_len=100, num_initials_trajs=10, num_branches=20, noise_depth=2, discount_factor=0.99)
+        current_cost = run_ag_tree(sess, value_f, policy_f, env, rollout_len=1500, num_initials_trajs=100, num_branches=200, noise_depth=2, discount_factor=0.99)
         end = time.time()
         # print("Time for one loop is {}".format(end-start))
         if current_cost < best_cost:
@@ -69,6 +80,7 @@ def run_experiment(load_type, max_time, save_dir):
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler) #one Ctrl+C now solves this, rather than n_instances Ctrl+C's
     save_dir = "C:/Users/user/Transformation/MIST_Bullet/models"
-    time_in_seconds = 12 * 3600
-    run_experiment(LoadType.LOAD_MOST_RECENT, time_in_seconds, save_dir)
+    time_in_seconds = 6 * 3600
+    run_experiment(LoadType.LOAD_LOWEST_COST, time_in_seconds, save_dir)
