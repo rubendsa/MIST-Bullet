@@ -28,8 +28,10 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
+
 def run_experiment(load_type, max_time, save_dir):
     global env
+
     start_time = time.time()
     OBS_SIZE = 18
     ACTION_SIZE = 4
@@ -56,12 +58,10 @@ def run_experiment(load_type, max_time, save_dir):
     env = EnvironmentMananger(n_instances=10, save_dir=save_dir)
 
     while(True):
-        
-        # i += 1
-        # print("loop {}".format(i))
         start = time.time()
-        current_cost = run_ag_tree(sess, value_f, policy_f, env, rollout_len=1500, num_initials_trajs=100, num_branches=200, noise_depth=2, discount_factor=0.99)
+        current_cost = run_ag_tree(sess, value_f, policy_f, env, rollout_len=500, num_initials_trajs=10, num_branches=20, noise_depth=2, discount_factor=0.99)
         end = time.time()
+
         # print("Time for one loop is {}".format(end-start))
         if current_cost < best_cost:
             best_cost = current_cost 

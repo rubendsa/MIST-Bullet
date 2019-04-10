@@ -6,7 +6,6 @@ from policy_f import PolicyFunction
 from collections import deque
 
 import numpy as np
-import pybullet_data
 from pyquaternion import Quaternion
 import pybullet as p
 from pybulletinstance import PyBulletInstance
@@ -79,14 +78,15 @@ class ProcessInput():
 
 class PyBulletProcess(multiprocessing.Process):
     
-    def __init__(self, input_queue, output_queue, save_dir):
+    def __init__(self, input_queue, output_queue, save_dir, gui):
         multiprocessing.Process.__init__(self)
         self.input_queue = input_queue 
         self.output_queue = output_queue 
         self.save_dir = save_dir
+        self.gui = gui
 
     def run(self):
-        env = PyBulletInstance()
+        env = PyBulletInstance(self.gui)
         policy_f = PolicyFunction(input_dim=18, output_dim=4)
 
         sess = tf.Session() 
@@ -130,7 +130,10 @@ class EnvironmentMananger():
         self.n_instances = n_instances
         self.task_queue = multiprocessing.JoinableQueue()
         self.result_queue = multiprocessing.Queue()
-        self.processes = [PyBulletProcess(self.task_queue, self.result_queue, save_dir) for _ in range(self.n_instances)]
+        if n_instances == 1: #if there is only one instance we launch with a GUI
+            self.processes = [PyBulletProcess(self.task_queue, self.result_queue, save_dir, True)]
+        else:
+            self.processes = [PyBulletProcess(self.task_queue, self.result_queue, save_dir, False) for _ in range(self.n_instances)]
         for p in self.processes:
             p.start()
     

@@ -4,8 +4,11 @@ import pybullet_data
 
 class PyBulletInstance():
 
-    def __init__(self):
-        self.client = bc.BulletClient(connection_mode=pybullet.DIRECT)
+    def __init__(self, GUI=False):
+        if(GUI):
+            self.client = bc.BulletClient(connection_mode=pybullet.GUI)
+        else:
+            self.client = bc.BulletClient(connection_mode=pybullet.DIRECT)
         self.client.setAdditionalSearchPath(pybullet_data.getDataPath())
         self.client.setGravity(0,0,-9.81)
         self.robotID = self.client.loadURDF("C:/Users/user/Transformation/MIST_Bullet/MIST.urdf", [0, 0, 1], pybullet.getQuaternionFromEuler([0,0,0]))
