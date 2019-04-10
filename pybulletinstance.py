@@ -89,12 +89,26 @@ class PyBulletInstance():
     # State Vector
     def getUAVState(self):
         a, b, c, d, e, f, g, h = self.client.getLinkState(self.robotID, 0, 1)
-        position = e # x,y,z
+        # position = e # x,y,z
+        position = computeCenterOfMass():
         orientation = f #Quaternion
         velocity = g 
         angular_velocity = h
         return position, orientation, velocity, angular_velocity 
 
+    def computeCenterOfMass():
+        allLinkPositions=[]    #TODO: Refactor this.
+
+
+        allLinkPositions.append((p.getBasePositionAndOrientation(robotId))[0])
+        for i in range(0, 3):
+            allLinkPositions.append((p.getLinkState(robotId, i, 1))[0])
+
+        
+        centerOfMass = np.sum(allLinkPositions, axis = 0)/4 #Average x, y, z, of all 4 link CoMs 
+        centerOfMass[2] = centerOfMass[2] -.01 # Z intertial offset used in the urdf file
+  
+        return centerOfMass
 
     def step(self):
         self.client.stepSimulation()
