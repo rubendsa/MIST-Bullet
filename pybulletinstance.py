@@ -38,19 +38,35 @@ class PyBulletInstance():
     ###################     Helper functions   #####################
     # Action Vector
     def applyAction(self, actionVector):
-        m0, m1, m2, m3, c0, c1, c2, c3, h0, h1, h2 = actionVector
+        w0, w1, w2, w3, c0, c1, c2, c3, h0, h1, h2 = actionVector
 
+        Kf = 1 # TODO: Put this in an object. 
+        Km = .1
+
+        # Kf = 8.54858e-06
+        # Km = Kf * .06
+
+        Fm0 = Kf * w0 
+        Fm1 = Kf * w1  
+        Fm2 = Kf * w2 
+        Fm3 = Kf * w3
+        Mm0 = Km * w0
+        Mm1 = Km * w1
+        Mm2 = Km * w2
+        Mm3 = Km * w3
+
+            
         # Thrust for each Motor
-        self.client.applyExternalForce(self.robotID, -1, [0,0, m0], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
-        self.client.applyExternalForce(self.robotID, 0, [0,0, m1], [0,0,0], 1) #Apply m1 force[N] on link1, w.r.t. local frame
-        self.client.applyExternalForce(self.robotID, 1, [0,0, m2], [0,0,0], 1) #Apply m2 force[N] on link2, w.r.t. local frame
-        self.client.applyExternalForce(self.robotID, 2, [0,0, m3], [0,0,0], 1) #Apply m3 force[N] on link3, w.r.t. local frame
+        self.client.applyExternalForce(self.robotID, -1, [0,0, Fm0], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
+        self.client.applyExternalForce(self.robotID, 0, [0,0, Fm1], [0,0,0], 1) #Apply m1 force[N] on link1, w.r.t. local frame
+        self.client.applyExternalForce(self.robotID, 1, [0,0, Fm2], [0,0,0], 1) #Apply m2 force[N] on link2, w.r.t. local frame
+        self.client.applyExternalForce(self.robotID, 2, [0,0, Fm3], [0,0,0], 1) #Apply m3 force[N] on link3, w.r.t. local frame
 
         # Torque for each Motor
-        self.client.applyExternalTorque(self.robotID, -1, [0,0,m0/4], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-        self.client.applyExternalTorque(self.robotID, 0, [0,0, -m1/4], 1) 
-        self.client.applyExternalTorque(self.robotID, 1, [0,0, m2/4], 1) 
-        self.client.applyExternalTorque(self.robotID, 2, [0,0, -m3/4], 1) 
+        self.client.applyExternalTorque(self.robotID, -1, [0,0, -Mm0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+        self.client.applyExternalTorque(self.robotID, 0, [0,0, Mm1], 1) 
+        self.client.applyExternalTorque(self.robotID, 1, [0,0, -Mm2], 1) 
+        self.client.applyExternalTorque(self.robotID, 2, [0,0, Mm3], 1) 
 
 
         # Visual of propeller spinning (not critical)
