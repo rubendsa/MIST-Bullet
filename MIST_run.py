@@ -97,8 +97,8 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     # K_rotation = np.eye(3) * np.array([[50, 50, 5]])
     # K_angularVelocity = np.eye(3) * np.array([[40, 40, 5]])
-    K_rotation = np.eye(3) * np.array([[3000, 3000, 3000]])
-    K_angularVelocity = np.eye(3) * np.array([[300, 300, 300]])
+    K_rotation = np.eye(3) * np.array([[300, 300, 300]])
+    K_angularVelocity = np.eye(3) * np.array([[30, 30, 30]])
     # K_rotation = np.eye(3) * np.array([[200, 200, 200]])
     # K_angularVelocity = np.eye(3) * np.array([[100, 100, 100]])
 
@@ -136,13 +136,6 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     error_position = np.array([positionW]) - np.array([des_positionW])
     error_velocity = np.array([velocityW]) - np.array([des_velocityW])
 
-    # print(type(K_position))
-    # print(type(error_position))
-    # print(type(K_velocity))
-    # print(type(error_velocity))
-    # print(type(np.array([[0,0, mass * g]]).T))
-    # print((error_position.T))
-    # Compute Force in world frame
     des_F = -K_position @ error_position.T - K_velocity @ error_velocity.T + np.array([[0,0, mass * gravity]]).T #
     # Compute u1 -> Force in world frame projected into the body z-axis
     zB = rotBtoW @ np.array([[0,0,1]]).T
@@ -152,36 +145,21 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     u1 = des_F.T @ zB
 
     des_zB = (des_F / LA.norm(des_F)).T
-
     des_xC = np.array([np.cos(des_yaw), np.sin(des_yaw), 0]).T
-    # des_xC = np.clip(des_xC, 0, .2)
-
-    # print(des_zB)
-    # print(des_xC)
-    # print(np.cross(des_zB.T, des_xC.T))
     des_yB = (np.cross(des_zB, des_xC) / LA.norm(np.cross(des_zB, des_xC)))
-    # print(LA.norm(np.cross(des_zB.T, des_xC.T)))
-    # print((np.cross(des_zB.T, des_xC.T) / LA.norm(np.cross(des_zB.T, des_xC.T))).T)
     des_xB = np.cross(des_yB, des_zB)
 
-    # print("des_xB.T", des_xB.T)
-    # print("des_xB", des_xB)
-    # print("des_yB", des_yB)
-    # print("des_zB", des_zB)
-    # print("des_R", des_R)
-
     des_R = np.concatenate((des_xB, des_yB, des_zB), axis = 0).T
+    des_R_flip = np.concatenate((-des_xB, -des_yB, des_zB), axis = 0).T
 
-    desRoll = -math.asin(des_R[2,0])
-    desPitch = math.atan2(des_R[2,1], des_R[2,1])
-    desYaw = math.atan2(des_R[1,0], des_R[0,0])
-    # desAnglesCliped = np.clip([desRoll, desPitch, desYaw], -.2, .2)
-    desAnglesCliped = [desRoll, desPitch, desYaw]
-
-    deslistBtoW = p.getMatrixFromQuaternion(p.getQuaternionFromEuler(desAnglesCliped))
-    desrotBtoW = np.array([[deslistBtoW[0], deslistBtoW[1], deslistBtoW[2]],
-                        [deslistBtoW[3], deslistBtoW[4], deslistBtoW[5]],
-                        [deslistBtoW[6], deslistBtoW[7], deslistBtoW[8]]])
+    # desRoll = -math.asin(des_R[2,0])
+    # desPitch = math.atan2(des_R[2,1], des_R[2,1])
+    # desYaw = math.atan2(des_R[1,0], des_R[0,0])
+    # desAnglesCliped = [desRoll, desPitch, desYaw]
+    # deslistBtoW = p.getMatrixFromQuaternion(p.getQuaternionFromEuler(desAnglesCliped))
+    # desrotBtoW = np.array([[deslistBtoW[0], deslistBtoW[1], deslistBtoW[2]],
+    #                     [deslistBtoW[3], deslistBtoW[4], deslistBtoW[5]],
+    #                     [deslistBtoW[6], deslistBtoW[7], deslistBtoW[8]]])
     # des_R = desrotBtoW
 
     # deslistBtoW = p.getMatrixFromQuaternion(des_orientationW)
@@ -192,53 +170,33 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
 
     eR_mat = .5 * (des_R.T @ rotBtoW - rotBtoW.T @ des_R)
-    # print("eR_mat:", eR_mat)
+    eR_mat_flip = .5 * (des_R_flip.T @ rotBtoW - rotBtoW.T @ des_R_flip)
+    print("matflip", np.sum(eR_mat_flip))
+    print("mat", np.sum(eR_mat))
+
+    # if (np.sum(eR_mat_flip) > np.sum(eR_mat)):
+    #     eR_mat = eR_mat_flip
 
     eR = np.array([[eR_mat[2,1], eR_mat[0,2], eR_mat[1,0]]])
-    # print("eR", eR)
-    # print("er_mat", eR_mat)
-    # print("er", eR)
-    # print(angularVelocityW)
-    # print(des_angular_velocityW)
 
     eW = (LA.inv(rotBtoW) @ angularVelocityW.T - np.array([des_angular_velocityW]).T).T # Was this supposed to be in the Body frame?
-    # print("eW", eW)
 
-
-    # print("-K_rotation @ eR.T", -K_rotation @ eR.T)
-    # print("- K_angularVelocity @ eW.T", - K_angularVelocity @ eW.T)
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
-    u1 = np.clip(u1, 0.0, 100.0)
+    u1 = np.clip(u1, 0.0, 200.0)
     u24 = np.clip(u24, -18.0, 18.0)
     
-    # print("u1:", u1)
-    # print("des_F", des_F)
-    # print("zB", zB)
-    # print("eR", eR)
-    # print("k_Rot", -K_rotation @ eR.T)
-
-    # print("u24:", u24)
     u = np.concatenate((u1, u24))
-    # print("u:", u)
-    # print("u1", u1, "u24", u24)
-    # print("u:", u)
 
     geo = np.array([[Kf, Kf, Kf, Kf],
                     [0, Kf*L, 0, -Kf*L],
                     [-Kf*L, 0, Kf*L, 0],
                     [Km, -Km, Km, -Km]])
-    
-    # Compute angular velocities
-    # print("LA.inv(geo):", LA.inv(geo))
-    # print("u:", u)
+
 
     w2 = LA.inv(geo) @ u
     w2 = np.clip(w2,0, None)
     w = w2
-    # print("w2", w2)
-    # w = np.sqrt(w2)
-    print("w", w)
 
     return w
 
@@ -361,12 +319,12 @@ def computeCenterOfMass():
 # tailsitterAttitudeControl()
 if __name__ == "__main__":
     simTime = 1000000
-    simDelay = 0.001
+    simDelay = 0.0001
     # p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
     p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
     # p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
     
-    p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
+    p.resetBasePositionAndOrientation(robotId, [0,0,20], [.5,0,0,.5]) # Staring position of robot
     p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
 
     for i in range (simTime): #Time to run simulation
@@ -384,7 +342,7 @@ if __name__ == "__main__":
         des_angular_velocityW = [0,0,0]
 
         if i>100:
-            des_positionW = [0,0,6]
+            des_positionW = [10,0,6]
         
 
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
