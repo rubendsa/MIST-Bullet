@@ -97,8 +97,8 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     # K_rotation = np.eye(3) * np.array([[50, 50, 5]])
     # K_angularVelocity = np.eye(3) * np.array([[40, 40, 5]])
-    K_rotation = np.eye(3) * np.array([[300, 300, 300]])
-    K_angularVelocity = np.eye(3) * np.array([[30, 30, 30]])
+    K_rotation = np.eye(3) * np.array([[30, 30, 30]])
+    K_angularVelocity = np.eye(3) * np.array([[3, 3, 3]])
     # K_rotation = np.eye(3) * np.array([[200, 200, 200]])
     # K_angularVelocity = np.eye(3) * np.array([[100, 100, 100]])
 
@@ -183,7 +183,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
-    u1 = np.clip(u1, 0.0, 200.0)
+    u1 = np.clip(u1, 0.0, 2000.0)
     u24 = np.clip(u24, -18.0, 18.0)
     
     u = np.concatenate((u1, u24))
@@ -319,12 +319,12 @@ def computeCenterOfMass():
 # tailsitterAttitudeControl()
 if __name__ == "__main__":
     simTime = 1000000
-    simDelay = 0.0001
+    simDelay = 0.01
     # p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
     p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
-    # p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
+    # p.resetBasePositionAndOrientation(robotId, [0,0,10], [0,0,0,1]) # Staring position of robot
     
-    p.resetBasePositionAndOrientation(robotId, [0,0,20], [.5,0,0,.5]) # Staring position of robot
+    p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
     p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
 
     for i in range (simTime): #Time to run simulation
