@@ -342,7 +342,7 @@ if __name__ == "__main__":
         des_angular_velocityW = [0,0,0]
 
         if i>100:
-            des_positionW = [i/30,0,10]
+            des_positionW = [0,0,10]
         
 
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
@@ -354,7 +354,7 @@ if __name__ == "__main__":
 
             # visualizeCenterOfMass()
             # visualizeLinkFrame(0)
-            # visualizeThrottle(w0, w1, w2, w3)
+            visualizeThrottle(w0, w1, w2, w3)
         p.resetDebugVisualizerCamera(5, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
         # p.addUserDebugLine([0,0,0], (p.getLinkState(robotId, 1, 1))[0], [1.0,1.0,1.0], lifeTime = .05)
         # p.addUserDebugLine([0,0,0], [-.0, 0, .0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0, lifeTime = .1)
