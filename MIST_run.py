@@ -319,13 +319,13 @@ def computeCenterOfMass():
 # tailsitterAttitudeControl()
 if __name__ == "__main__":
     simTime = 1000000
-    simDelay = 0.01
-    # p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
-    p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
-    # p.resetBasePositionAndOrientation(robotId, [0,0,10], [0,0,0,1]) # Staring position of robot
+    simDelay = 0.0001
+    p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
+    # p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
+    p.resetBasePositionAndOrientation(robotId, [0,0,10], [0,0,0,1]) # Staring position of robot
     
-    p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
-    p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
+    # p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
+    # p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
 
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
@@ -342,7 +342,7 @@ if __name__ == "__main__":
         des_angular_velocityW = [0,0,0]
 
         if i>100:
-            des_positionW = [10,0,6]
+            des_positionW = [i/30,0,10]
         
 
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
@@ -355,7 +355,7 @@ if __name__ == "__main__":
             # visualizeCenterOfMass()
             # visualizeLinkFrame(0)
             # visualizeThrottle(w0, w1, w2, w3)
-        # p.resetDebugVisualizerCamera(5, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
+        p.resetDebugVisualizerCamera(5, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
         # p.addUserDebugLine([0,0,0], (p.getLinkState(robotId, 1, 1))[0], [1.0,1.0,1.0], lifeTime = .05)
         # p.addUserDebugLine([0,0,0], [-.0, 0, .0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0, lifeTime = .1)
 
