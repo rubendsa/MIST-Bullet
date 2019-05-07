@@ -86,7 +86,7 @@ def cycleEverything(i, simTime):
 
 
 
-def quadAttitudeControl(robotId, robotDesiredPoseWorld):
+def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle):
 
     # Set Gains and Parameters TODO: Move this out
     # K_position = np.eye(3) * np.array([[30, 30, 100]]) # gain for x, y, z components of error vector
@@ -191,12 +191,37 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
                     [-Kf*L, 0, Kf*L, 0],
                     [Km, -Km, Km, -Km]])
 
+    # geoTailSitterRaw = np.array([
+    #     [ 1/(4*Kf),           0, -1/(2*Kf*L),  1/(4*Km)]
+    #     [ 1/(4*Kf),  1/(2*Kf*L),           0, -1/(4*Km)]
+    #     [ 1/(4*Kf),           0,  1/(2*Kf*L),  1/(4*Km)]
+    #     [ 1/(4*Kf), -1/(2*Kf*L),           0, -1/(4*Km)]])
+    geoTailSitter = np.array([
+        [ 1/(4*Kf),           0,           0,   0],
+        [ 1/(4*Kf),  1/(2*Kf*L),           0,   0],
+        [ 1/(4*Kf),           0,           0,   0],
+        [ 1/(4*Kf), -1/(2*Kf*L),           0,   0]])
+    geoTailSitterCtrlSurf = np.array([
+        [ 0,    0,    -1/(2*Kf*L),      1/(4*Km)],
+        [ 0,    0,              0,     -1/(4*Km)],
+        [ 0,    0,     1/(2*Kf*L),      1/(4*Km)],
+        [ 0,    0,              0,     -1/(4*Km)]])
+        
 
     w2 = LA.inv(geo) @ u
     w2 = np.clip(w2,0, None)
     w = w2
+    
+    e = 0,0,0,0
 
-    return w
+    if hingeAngle <1.0:
+        w2 = geoTailSitter @ u
+        w2 = np.clip(w2,0, None)
+        w = w2
+        e = geoTailSitterCtrlSurf @ u
+
+
+    return w,e
 
 
 
@@ -231,6 +256,13 @@ def applyAction(actionVector, robotId=robotId):
     p.applyExternalTorque(robotId, 0, [0,0, Mm1], 1) 
     p.applyExternalTorque(robotId, 1, [0,0, -Mm2], 1) 
     p.applyExternalTorque(robotId, 2, [0,0, Mm3], 1) 
+
+    # Torque for each Elevon
+    p.applyExternalTorque(robotId, -1, [0,20,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 0, [0,20,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 1, [0,20,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 2, [0,20,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+
 
 
     # Visual of propeller spinning (not critical)
@@ -305,19 +337,15 @@ def computeCenterOfMass():
 def wingAero():
     # Based on control input (elevon angle and air vector), apply a force and moment on the wing section local frame. 
     
-    for i in range(-1,3):
-
-        # p.applyExternalForce(robotId, -1, [0,0,10], [0,0,0], 2) #Apply m0 force[N] on link0, w.r.t. local frame
-        # p.applyExternalForce(robotId, 0, [500,0,0], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
-        # p.applyExternalTorque(robotId, i, [0,100,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-        p.applyExternalTorque(robotId, -1, [0,20,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-        p.applyExternalTorque(robotId, 0, [0,20,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-        p.applyExternalTorque(robotId, 1, [0,20,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-        p.applyExternalTorque(robotId, 2, [0,20,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-        # visualizeLinkFrame(-1)
-        # p.addUserDebugLine([0,0,0], [10, 0, 0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = -1, lifeTime = .1)
-        # p.addUserDebugLine([0,0,0], [0, 10, 0], [0.0,1.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = -1, lifeTime = .1)
-
+    # p.applyExternalForce(robotId, -1, [0,0,10], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
+    # p.applyExternalForce(robotId, 0, [0,0,0], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
+    # p.applyExternalForce(robotId, 1, [0,0,0], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
+    # p.applyExternalForce(robotId, 2, [0,0,0], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
+    
+    p.applyExternalTorque(robotId, -1, [0,200,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 0, [0,200,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 1, [0,200,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 2, [0,200,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
 
 
 ###################     RUN SIMULATION     #####################
@@ -330,34 +358,39 @@ if __name__ == "__main__":
     # p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
     # p.resetBasePositionAndOrientation(robotId, [0,0,10], [0,0,0,1]) # Staring position of robot
     
-    # p.resetBasePositionAndOrientation(robotId, [0,0,20], [.5,0,0,.5]) # Staring position of robot
-    # p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
+    p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
+    p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
 
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
         time.sleep(simDelay)
 
-        applyAction([0, 0, 0, 0, .9, .9, .9, .9, 1.57, 1.57, 1.57], robotId) #Example applyAction
+        applyAction([0, 0, 0, 0, .1, .1, .1, .1, 1.57, 1.57, 1.57], robotId) #Example applyAction
         # applyAction([0, 0, 0, 0, .3, .1, -.1, -.3, 0, 0, 0], robotId) #Example applyAction
 
 
         ##### Testing attitude and position controller:
-        des_positionW = [0,0,5]
+        des_positionW = [0,0,10]
         des_orientationW = p.getQuaternionFromEuler([0,0,0]) # [roll, pitch, yaw]
         des_velocityW = [0,0,0]
         des_angular_velocityW = [0,0,0]
 
         if i>100:
             des_positionW = [0,10,5]
-        
 
+            hingeAngle = 1.57
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
-            w1, w2, w3, w0 = quadAttitudeControl(robotId, robotDesiredPoseWorld) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-            # applyAction([w0, w1, w2, w3, 0, 0, 0, 0, 1.57, 1.57, 1.57], robotId)
+            
+            # w1, w2, w3, w0 = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            w1, w2, w3, w0 = w
+            e1, e2, e3, e0 = e
+            # e0, e1, e2, e3 = [0,0,0,0]
+            applyAction([w0, w1, w2, w3, e0, e1, e2, e3, hingeAngle, hingeAngle, hingeAngle], robotId)
             # p.applyExternalForce(robotId, 1, [0,0, 5], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
             # print("linkframe", p.WORLD_FRAME)
 
-            wingAero()
+            # wingAero()
 
             # computeCenterOfMass()
 
