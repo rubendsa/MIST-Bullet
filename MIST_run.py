@@ -190,17 +190,23 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle):
                     [0, Kf*L, 0, -Kf*L],
                     [-Kf*L, 0, Kf*L, 0],
                     [Km, -Km, Km, -Km]])
-
+    # Below is the inverse of "geo" computed using the matlab symbolic package
     # geoTailSitterRaw = np.array([
     #     [ 1/(4*Kf),           0, -1/(2*Kf*L),  1/(4*Km)]
     #     [ 1/(4*Kf),  1/(2*Kf*L),           0, -1/(4*Km)]
     #     [ 1/(4*Kf),           0,  1/(2*Kf*L),  1/(4*Km)]
     #     [ 1/(4*Kf), -1/(2*Kf*L),           0, -1/(4*Km)]])
+    
+    # Motor and elevon mixing when in a tailsitter state:
+    # Motors down the rows, mixing across the columns [Throttle, roll, pitch, yaw]
+    # geoTailSitter has zeros for the pitch and yaw because when in a tailsitter state, only the control surfaces are used for pitch and yaw.
     geoTailSitter = np.array([
-        [ 1/(4*Kf),           0,           0,   0],
+        [ 1/(4*Kf), -1/(2*Kf*L),           0,   0],  
         [ 1/(4*Kf),  1/(2*Kf*L),           0,   0],
-        [ 1/(4*Kf),           0,           0,   0],
+        [ 1/(4*Kf),  1/(2*Kf*L),           0,   0],
         [ 1/(4*Kf), -1/(2*Kf*L),           0,   0]])
+
+    # geoTailSitterCtrlSurf: used for computing elevon angles "e" from the general actuation effort "u" 
     geoTailSitterCtrlSurf = np.array([
         [ 0,    0,    1/(2*Kf*L),     1/(4*Km)],
         [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)],
@@ -214,6 +220,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle):
     
     e = 0,0,0,0
 
+    # if in a tailsitter state, recompute motor velocity and elevon angles as per geoTailSitter and geoTailSitterCtrlSurf geometry.
     if hingeAngle <1.0:
         w2 = geoTailSitter @ u
         w2 = np.clip(w2,0, None)
