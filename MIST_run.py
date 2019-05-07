@@ -170,9 +170,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
 
 
     eR_mat = .5 * (des_R.T @ rotBtoW - rotBtoW.T @ des_R)
-    eR_mat_flip = .5 * (des_R_flip.T @ rotBtoW - rotBtoW.T @ des_R_flip)
-    print("matflip", np.sum(eR_mat_flip))
-    print("mat", np.sum(eR_mat))
+   
 
     # if (np.sum(eR_mat_flip) > np.sum(eR_mat)):
     #     eR_mat = eR_mat_flip
@@ -229,11 +227,7 @@ def applyAction(actionVector, robotId=robotId):
     p.applyExternalForce(robotId, 2, [0,0, Fm3], [0,0,0], 1) #Apply m3 force[N] on link3, w.r.t. local frame
 
     # Torque for each Motor
-    # p.applyExternalTorque(robotId, -1, [0,0, Mm0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    # p.applyExternalTorque(robotId, 0, [0,0, -Mm1], 1) 
-    # p.applyExternalTorque(robotId, 1, [0,0, Mm2], 1) 
-    # p.applyExternalTorque(robotId, 2, [0,0, -Mm3], 1) 
-    p.applyExternalTorque(robotId, -1, [0,0, -Mm0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, -1, [0,0, -Mm0], 2) # BUG: for the base_link, p.LINK_FRAME=1 is inverted with p.WORLD_FRAME=2. Hence, for LINK_FRAME, we have to use 2. https://github.com/bulletphysics/bullet3/issues/1949 
     p.applyExternalTorque(robotId, 0, [0,0, Mm1], 1) 
     p.applyExternalTorque(robotId, 1, [0,0, -Mm2], 1) 
     p.applyExternalTorque(robotId, 2, [0,0, Mm3], 1) 
@@ -303,14 +297,26 @@ def computeCenterOfMass():
     
     centerOfMass = np.sum(allLinkPositions, axis = 0)/4 #Average x, y, z, of all 4 link CoMs 
     centerOfMass[2] = centerOfMass[2] -.01 # Z intertial offset used in the urdf file
-    # print(allLinkPositions[0])
-    # print(allLinkPositions[1])
-    # print(allLinkPositions[2])
-    # print(allLinkPositions[3])
 
     # print("centerOfMass:", centerOfMass)
     return centerOfMass
 
+
+def wingAero():
+    # Based on control input (elevon angle and air vector), apply a force and moment on the wing section local frame. 
+    
+    for i in range(-1,3):
+
+        # p.applyExternalForce(robotId, -1, [0,0,10], [0,0,0], 2) #Apply m0 force[N] on link0, w.r.t. local frame
+        # p.applyExternalForce(robotId, 0, [500,0,0], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
+        # p.applyExternalTorque(robotId, i, [0,100,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+        p.applyExternalTorque(robotId, -1, [0,20,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+        p.applyExternalTorque(robotId, 0, [0,20,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+        p.applyExternalTorque(robotId, 1, [0,20,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+        p.applyExternalTorque(robotId, 2, [0,20,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+        # visualizeLinkFrame(-1)
+        # p.addUserDebugLine([0,0,0], [10, 0, 0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = -1, lifeTime = .1)
+        # p.addUserDebugLine([0,0,0], [0, 10, 0], [0.0,1.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = -1, lifeTime = .1)
 
 
 
@@ -319,19 +325,19 @@ def computeCenterOfMass():
 # tailsitterAttitudeControl()
 if __name__ == "__main__":
     simTime = 1000000
-    simDelay = 0.0001
+    simDelay = 0.01
     p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
     # p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
-    p.resetBasePositionAndOrientation(robotId, [0,0,10], [0,0,0,1]) # Staring position of robot
+    # p.resetBasePositionAndOrientation(robotId, [0,0,10], [0,0,0,1]) # Staring position of robot
     
-    # p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
+    # p.resetBasePositionAndOrientation(robotId, [0,0,20], [.5,0,0,.5]) # Staring position of robot
     # p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
 
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
         time.sleep(simDelay)
 
-        # applyAction([0, 0, 0, 0, .9, .9, .9, .9, 1.57, 1.57, 1.57], robotId) #Example applyAction
+        applyAction([0, 0, 0, 0, .9, .9, .9, .9, 1.57, 1.57, 1.57], robotId) #Example applyAction
         # applyAction([0, 0, 0, 0, .3, .1, -.1, -.3, 0, 0, 0], robotId) #Example applyAction
 
 
@@ -342,20 +348,23 @@ if __name__ == "__main__":
         des_angular_velocityW = [0,0,0]
 
         if i>100:
-            des_positionW = [0,0,10]
+            des_positionW = [0,10,5]
         
 
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
             w1, w2, w3, w0 = quadAttitudeControl(robotId, robotDesiredPoseWorld) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-            applyAction([w0, w1, w2, w3, 0, 0, 0, 0, 1.57, 1.57, 1.57], robotId)
-            # applyAction([0, 0, 0, 100, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
+            # applyAction([w0, w1, w2, w3, 0, 0, 0, 0, 1.57, 1.57, 1.57], robotId)
+            # p.applyExternalForce(robotId, 1, [0,0, 5], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
+            # print("linkframe", p.WORLD_FRAME)
+
+            wingAero()
 
             # computeCenterOfMass()
 
             # visualizeCenterOfMass()
             # visualizeLinkFrame(0)
-            visualizeThrottle(w0, w1, w2, w3)
-        p.resetDebugVisualizerCamera(5, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
+            # visualizeThrottle(w0, w1, w2, w3)
+        # p.resetDebugVisualizerCamera(3, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
         # p.addUserDebugLine([0,0,0], (p.getLinkState(robotId, 1, 1))[0], [1.0,1.0,1.0], lifeTime = .05)
         # p.addUserDebugLine([0,0,0], [-.0, 0, .0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0, lifeTime = .1)
 
