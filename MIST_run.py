@@ -202,10 +202,10 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle):
         [ 1/(4*Kf),           0,           0,   0],
         [ 1/(4*Kf), -1/(2*Kf*L),           0,   0]])
     geoTailSitterCtrlSurf = np.array([
-        [ 0,    0,    -1/(2*Kf*L),      1/(4*Km)],
-        [ 0,    0,              0,     -1/(4*Km)],
-        [ 0,    0,     1/(2*Kf*L),      1/(4*Km)],
-        [ 0,    0,              0,     -1/(4*Km)]])
+        [ 0,    0,    1/(2*Kf*L),     1/(4*Km)],
+        [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)],
+        [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)],
+        [ 0,    0,    1/(2*Kf*L),     1/(4*Km)]])
         
 
     w2 = LA.inv(geo) @ u
@@ -228,7 +228,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle):
 ###################     Helper functions   #####################
 # Action Vector
 def applyAction(actionVector, robotId=robotId):
-    w0, w1, w2, w3, c0, c1, c2, c3, h0, h1, h2 = actionVector
+    w0, w1, w2, w3, e0, e1, e2, e3, h0, h1, h2 = actionVector
 
     Kf = 1 # TODO: Put this in an object. 
     Km = .1
@@ -258,10 +258,12 @@ def applyAction(actionVector, robotId=robotId):
     p.applyExternalTorque(robotId, 2, [0,0, Mm3], 1) 
 
     # Torque for each Elevon
-    p.applyExternalTorque(robotId, -1, [0,20,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 0, [0,20,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 1, [0,20,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 2, [0,20,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, -1, [0,5*e0,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 0, [0,5*e1,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 1, [0,5*e2,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 2, [0,5*e3,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    
+    p.applyExternalTorque(robotId, -1, [0,0,e0+e1-e2-e3], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
 
 
 
@@ -272,10 +274,10 @@ def applyAction(actionVector, robotId=robotId):
     p.setJointMotorControl2(robotId, propIds[3], p.VELOCITY_CONTROL, targetVelocity=-w3*100, force=1000)
     
     # Control surface deflection [rads]
-    p.setJointMotorControl2(robotId, ctrlSurfIds[0], p.POSITION_CONTROL, targetPosition=c0, force=1000)
-    p.setJointMotorControl2(robotId, ctrlSurfIds[1], p.POSITION_CONTROL, targetPosition=c1, force=1000)
-    p.setJointMotorControl2(robotId, ctrlSurfIds[2], p.POSITION_CONTROL, targetPosition=c2, force=1000)
-    p.setJointMotorControl2(robotId, ctrlSurfIds[3], p.POSITION_CONTROL, targetPosition=c3, force=1000)
+    p.setJointMotorControl2(robotId, ctrlSurfIds[0], p.POSITION_CONTROL, targetPosition=e0, force=1000)
+    p.setJointMotorControl2(robotId, ctrlSurfIds[1], p.POSITION_CONTROL, targetPosition=e1, force=1000)
+    p.setJointMotorControl2(robotId, ctrlSurfIds[2], p.POSITION_CONTROL, targetPosition=e2, force=1000)
+    p.setJointMotorControl2(robotId, ctrlSurfIds[3], p.POSITION_CONTROL, targetPosition=e3, force=1000)
     
     # Hinge angle [rads]
     p.setJointMotorControl2(robotId, hingeIds[0], p.POSITION_CONTROL, targetPosition=h0, force=1000)
@@ -353,19 +355,19 @@ def wingAero():
 # tailsitterAttitudeControl()
 if __name__ == "__main__":
     simTime = 1000000
-    simDelay = 0.01
+    simDelay = 0.0001
     p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
     # p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
-    # p.resetBasePositionAndOrientation(robotId, [0,0,10], [0,0,0,1]) # Staring position of robot
+    p.resetBasePositionAndOrientation(robotId, [0,0,10], [0,0,0,1]) # Staring position of robot
     
-    p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
-    p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
+    # p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
+    # p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
 
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
         time.sleep(simDelay)
 
-        applyAction([0, 0, 0, 0, .1, .1, .1, .1, 1.57, 1.57, 1.57], robotId) #Example applyAction
+        # applyAction([0, 0, 0, 0, .1, .1, .1, .1, 1.57, 1.57, 1.57], robotId) #Example applyAction
         # applyAction([0, 0, 0, 0, .3, .1, -.1, -.3, 0, 0, 0], robotId) #Example applyAction
 
 
@@ -376,9 +378,15 @@ if __name__ == "__main__":
         des_angular_velocityW = [0,0,0]
 
         if i>100:
-            des_positionW = [0,10,5]
+            des_positionW = [0,5,10]
 
-            hingeAngle = 1.57
+            hingeAngle = 0
+            # if i> 1000:
+            #     hingeAngle = 1.57
+            
+            # if i>2000:
+            #     hingeAngle = 0
+
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
             
             # w1, w2, w3, w0 = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
@@ -397,7 +405,7 @@ if __name__ == "__main__":
             # visualizeCenterOfMass()
             # visualizeLinkFrame(0)
             # visualizeThrottle(w0, w1, w2, w3)
-        # p.resetDebugVisualizerCamera(3, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
+        p.resetDebugVisualizerCamera(6, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
         # p.addUserDebugLine([0,0,0], (p.getLinkState(robotId, 1, 1))[0], [1.0,1.0,1.0], lifeTime = .05)
         # p.addUserDebugLine([0,0,0], [-.0, 0, .0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0, lifeTime = .1)
 
