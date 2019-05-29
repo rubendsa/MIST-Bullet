@@ -16,6 +16,7 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import matplotlib.dates as mdates
 import matplotlib
 import math
+from scipy.optimize import fsolve
 
 class solar:
     def __init__(self):
@@ -72,6 +73,118 @@ class solar:
 
         # number of shadow test points
         self.num_shadow_tests = 100
+
+        self.battery_power = []
+        self.motors_power = 0
+        self.length = 0
+        self.max_thrust = 0
+
+        # 2 amp hours, 14.8v, --> P = V*I [W*s]
+        self.initial_battery = 2.0*60*14.8
+
+        # length of timestep - default timestep is 1/240 second
+        self.time_step = 1.0/240.0
+
+        # circuit simulation
+        self.R0 = 10
+        self.R1 = 10
+
+        self.C = 1e-1
+        self.SOC = 100
+
+        self.alpha = 1 # % const relating SOC and Voc set this
+        self.k_T = 1 # % motor torque const.
+        self.J_T = 1 # % motor torque const.
+        self.k_e = 1 # % motor voltage const.
+        self.k_T2 = 1 # %motor torque const. (friction/drag)
+
+        self.motor_efficiency = 0.90
+        self.MPPT_efficiency = 0.90
+
+        self.wm_c = [0.0,0.0,0.0,0.0] # current motor speeds
+        self.wm_p = [0.0,0.0,0.0,0.0] # previous motor speeds
+
+        self.i1 = 0.5
+        self.i2 = 0.5
+        self.i3 = 0.5
+        self.VO = 16.0
+
+        self.sum_i3  = 0.0
+
+        self.x0 = [self.i1, self.i2, self.i3, self.VO]
+
+        self.temp_solar_power = 0
+
+    def power_calc(self, solar_power, w_motors):
+        self.wm_p = self.wm_c
+        self.wm_c = w_motors
+
+        self.temp_solar_power = solar_power*self.MPPT_efficiency
+
+        # fsolve
+        self.x0 = fsolve(self.power_fun, self.x0)
+        
+        self.i1 = self.x0[0]
+        self.i2 = self.x0[1]
+        self.i3 = self.x0[2]
+        self.VO = self.x0[3]
+
+        self.SOC = self.SOC - self.x0[1]*self.time_step
+        self.sum_i3 = self.sum_i3 + self.x0[3]*self.time_step
+
+
+
+    def power_fun(self, x):
+        i1 = x[0]
+        i2 = x[1]
+        i3 = x[2]
+        VO = x[3]
+     
+
+        dwdt = []
+        torque = []
+        i_motors = []
+        v_motors = []
+        Pmotors = 0
+        for i in range(4):
+            dwdt.append((self.wm_c[i] - self.wm_p[i])/self.time_step)
+            tq = self.J_T*dwdt[i] + self.wm_c[i]*self.k_T2
+
+            # cannot have negative torque, motors cannot charge battery
+            if tq < 0:
+                tq = 0
+
+            torque.append(tq)
+            i_motors.append(tq/self.k_T)
+            v_motors.append(self.k_e*self.wm_c[i])
+            Pmotors += i_motors[i]*v_motors[i]
+
+        Psolar = self.temp_solar_power
+        
+        # power from motors
+        Pmotors =  Pmotors*self.motor_efficiency
+
+        # current from ESCs (motors)
+        i4 = Pmotors/VO
+
+        # current from MPPT (solar cells)
+        i5 = Psolar/VO
+        
+        # Voc from SOC
+        Voc = self.SOC*self.alpha
+
+        # equations (equal to 0)
+        z0 = -i1 + i4 - i5
+        z1 = i1 - i2 -i3
+        z2 = Voc - self.R0*i1 - self.R1*i2 - VO
+        z3 = (1./(self.R1*self.C))*self.sum_i3 - i2
+
+        z = [z0,z1,z2,z3]
+        return z
+
+
+
+
 
 
 
@@ -134,67 +247,36 @@ class solar:
         rotation = [az*self.to_degrees, el*self.to_degrees]
         return rotation
 
-    # def calculate_shadow_ratio(self, robotId, link_num, sol_el, sol_az, sol_dist):
-    #     # https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit#heading=h.e7a8kr2734k2
-    #     # p.45 rayTest
+    # from thrust
+    def set_motors_power(self, m):
+        # mt28 14 motors 770 kv 
+        # assuming prop = 11*3.7CF
+        # a = 107.083685545224 # linear fit for now
 
-    #     # pick points on surface of panel
-    #     # rayFromPosition = sun position, from solpos
-    #     # rayToPosition = point on surface
+        a = 249.976491970077
+        b = 43.5675424329268
+        # calculate power the motors are using, in [W]
+        # scale thrust to be 0 to 1
+        p = 0
+        for value in m:
+            if value > self.max_thrust:
+                self.max_thrust = value
+        for value in m:
+            thrust = value/self.max_thrust
+            p = p + a*thrust*thrust + b*thrust
+        self.motors_power = p # W
 
-    #     # for each ray, if it intersects an object before reaching the panel,
-    #     # then that point is in the shadow
+    def update_battery(self):
+        if len(self.battery_power) == 0:
+            for i in range(len(self.power)):
+                self.battery_power = self.battery_power + [self.initial_battery]
 
-    #     # getting solar position x,y,z from el, az
-    #     # assumes sol_az and sol_el in radians
-    #     r_after_el = math.cos(sol_el) * sol_dist
-    #     xs = math.cos(sol_az) * r_after_el
-    #     ys = math.sin(sol_az) * r_after_el
-    #     zs = math.sin(sol_el) * sol_dist
-
-    #     # estimates from SUAVQ paper, change this
-    #     panel_width = 0.51
-    #     panel_height = 0.31
-
-    #     o0 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  link_num) #may need to be -1 to 2?
-    #     # o1 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  0))
-    #     # o2 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  1))
-    #     # o3 = p.getEulerFromQuaternion(self.getLinkOrientation(robotId,  2))
-
-    #     p0 = self.getLinkPosition(robotId, link_num)
-    #     # p1 = self.getLinkPosition(robotId,  0)
-    #     # p2 = self.getLinkPosition(robotId,  1)
-    #     # p3 = self.getLinkPosition(robotId,  2)
-
-    #     roll  = o0[0]
-    #     pitch = o0[1]
-    #     yaw   = o0[2]
-
-    #     # panel normal vector
-    #     nx = cos(yaw)*cos(pitch)
-    #     ny = sin(yaw)*cos(pitch)
-    #     nz = sin(pitch)
-
-    #     n = [nx, ny, nz]
-
-    #     # arbitrary vector
-    #     a = [1,0,0]
-
-    #     # vector parallel to plane of panel
-    #     vp = numpy.cross(n,a)
-
-    #     # maybe better idea to find corners of panel and pick points
-    #     # within that rectangle
-
-    #     # panel center = p0
-    #     # roll is known
-    #     # normal vector to plane is known
+        for i in range(len(self.battery_power)):
+            self.battery_power[i] = self.battery_power[i] + self.time_step*self.power[i] # add solar power
+            self.battery_power[i] = self.battery_power[i] - self.time_step*self.motors_power # subtract power from motors
+       
 
 
-    #     for i in range(0,self.num_shadow_tests):
-    #         xp =
-    #         yp =
-    #         zp =
         
 
     def calculate_power(self):
@@ -221,6 +303,7 @@ class solar:
         power1 = [x+y+z+a for x,y,z,a in zip(self.P_mpp[0], self.P_mpp[1], self.P_mpp[2], self.P_mpp[3])]
         # this is a list of power values throughout a day
         self.power = power1
+        self.length = len(self.power)
 
     # def updatePos(self, euler):
     #     self.roll = euler[0]

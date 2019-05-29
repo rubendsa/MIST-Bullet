@@ -209,8 +209,8 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld):
     # print("- K_angularVelocity @ eW.T", - K_angularVelocity @ eW.T)
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
-    u1 = np.clip(u1, 0.0, 200.0)
-    u24 = np.clip(u24, -100.0, 100.0)
+    u1 = np.clip(u1, 0.0, 100.0)
+    u24 = np.clip(u24, -20.0, 20.0)
     
     # print("u1:", u1)
     # print("des_F", des_F)
@@ -403,9 +403,10 @@ if __name__ == "__main__":
     for i in range (simTime): #Time to run simulation
         currentState = getUAVState(robotId)
         solarSim.updateSurfaces(robotId)
+        
 
         # don't always calculate power because it's currently slow
-        if i%10 == 0:
+        if False: #i%10 == 0:
             solarSim.calculate_power()
 
             # mid day power
@@ -417,8 +418,8 @@ if __name__ == "__main__":
             # plot
             plt.scatter(i, power_mid)
             plt.xlabel('Simulation Time Step')
-            plt.ylabel('Power At Mid Day')
-            plt.title('Mid Day Power')
+            plt.ylabel('Solar Power At Mid Day')
+            plt.title('Mid Day Solar Power')
             plt.pause(0.005)
 
         p.stepSimulation()
@@ -441,7 +442,7 @@ if __name__ == "__main__":
         
 
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW 
-            print("des_position", des_positionW)
+            # print("des_position", des_positionW)
             w1, w2, w3, w0 = quadAttitudeControl(robotId, robotDesiredPoseWorld) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
             applyAction([w0, w1, w2, w3, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
             # applyAction([0, 0, 0, 100, -1, -1, -1, -1, 1.57, 1.57, 1.57], robotId)
@@ -451,6 +452,44 @@ if __name__ == "__main__":
             # visualizeCenterOfMass()
             # visualizeLinkFrame(0)
             # visualizeThrottle(w0, w1, w2, w3)
+            # print([w0, w1, w1, w3, 10000])
+            if (True):
+                solarSim.calculate_power()
+                solarSim.set_motors_power([w0, w1, w2, w3])
+                solarSim.update_battery()
+                # print(solarSim.battery_power[int(len(solarSim.power)/2)])
+
+                power_mid = solarSim.battery_power[int(len(solarSim.power)/2)]
+
+                # solarSim.power_calc(solar_power, w_motors)
+                solarSim.power_calc(power_mid, [w0, w1, w2, w3])
+
+
+                plt.subplot(3,1,1)
+                plt.scatter(i, power_mid)
+                plt.xlabel('Simulation Time Step')
+                plt.ylabel('Battery Power At Mid Day [[W*s]')
+                plt.title('Mid Day Battery Power [W*s]')
+                plt.pause(0.0005)
+
+
+
+                power_mid_solar = (solarSim.power[int(len(solarSim.power)/2)])
+                plt.subplot(3,1,2)
+                plt.scatter(i, power_mid_solar)
+                plt.xlabel('Simulation Time Step')
+                plt.ylabel('Solar Power At Mid Day [W]')
+                plt.title('Mid Day Solar Power [W]')
+                plt.pause(0.005)
+
+                motor_power = solarSim.motors_power
+                plt.subplot(3,1,3)
+                plt.scatter(i, motor_power)
+                plt.xlabel('Simulation Time Step')
+                plt.ylabel('Power Consumed [W]')
+                plt.title('Power Consumed by Motors [W]')
+                plt.pause(0.005)
+            
         p.resetDebugVisualizerCamera(15, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
 
     # print(getUAVState(robotId))
