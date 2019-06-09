@@ -102,14 +102,21 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState):
     # K_rotation = np.eye(3) * np.array([[200, 200, 200]])
     # K_angularVelocity = np.eye(3) * np.array([[100, 100, 100]])
 
-    Kf = 1
-    Km = .1
+    K_position = .5 * K_position
+    K_velocity = .5 * K_velocity
+    K_rotation = .5 * K_rotation
+    K_angularVelocity = .5 * K_angularVelocity
+
+    # Kf = 1
+    # Km = .1
+    Kf = 2.02E-7
+    Km = 2.02E-8
 
     # Kf = 8.54858e-06
     # Km = kf * .06
     L = .28
 
-    mass = 4 #Mass in [kg]
+    mass = 2.5 #Mass in [kg]
     gravity = 9.81
 
     # Get pose
@@ -235,8 +242,11 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState):
 def applyAction(actionVector, robotId=robotId):
     w0, w1, w2, w3, e0, e1, e2, e3, h0, h1, h2 = actionVector
 
-    Kf = 1 # TODO: Put this in an object. 
-    Km = .1
+    # Kf = 1 # TODO: Put this in an object. 
+    # Km = .1
+
+    Kf = 2.02E-7
+    Km = 2.02E-8
 
     # Kf = 8.54858e-06
     # Km = Kf * .06
@@ -263,12 +273,12 @@ def applyAction(actionVector, robotId=robotId):
     p.applyExternalTorque(robotId, 2, [0,0, Mm3], 1) 
 
     # Torque for each Elevon
-    p.applyExternalTorque(robotId, -1, [0,5*e0,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 0, [0,5*e1,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 1, [0,5*e2,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 2, [0,5*e3,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, -1, [0,2*e0,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 0, [0,2*e1,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 1, [0,2*e2,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 2, [0,2*e3,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
     # The difference in elevons induces a torque in the z axis for tailsitter. 
-    p.applyExternalTorque(robotId, -1, [0,0,10*(e0+e1-e2-e3)], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, -1, [0,0,5*(e0+e1-e2-e3)], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
 
 
 
@@ -285,9 +295,9 @@ def applyAction(actionVector, robotId=robotId):
     p.setJointMotorControl2(robotId, ctrlSurfIds[3], p.POSITION_CONTROL, targetPosition=2*e3, force=1000)
     
     # Hinge angle [rads]
-    p.setJointMotorControl2(robotId, hingeIds[0], p.POSITION_CONTROL, targetPosition=h0, maxVelocity=8, force=100)
-    p.setJointMotorControl2(robotId, hingeIds[1], p.POSITION_CONTROL, targetPosition=h1, maxVelocity=8, force=100)
-    p.setJointMotorControl2(robotId, hingeIds[2], p.POSITION_CONTROL, targetPosition=h2, maxVelocity=8, force=100)
+    p.setJointMotorControl2(robotId, hingeIds[0], p.POSITION_CONTROL, targetPosition=h0, maxVelocity=8, force=10000)
+    p.setJointMotorControl2(robotId, hingeIds[1], p.POSITION_CONTROL, targetPosition=h1, maxVelocity=8, force=10000)
+    p.setJointMotorControl2(robotId, hingeIds[2], p.POSITION_CONTROL, targetPosition=h2, maxVelocity=8, force=10000)
 
 # State Vector
 def getUAVState(robotId=robotId):
@@ -445,7 +455,9 @@ if __name__ == "__main__":
 
             # visualizeCenterOfMass()
             # visualizeLinkFrame(0)
-            # visualizeThrottle(w0, w1, w2, w3)
+            Kf = 2.02E-7
+            Km = 2.02E-8
+            # visualizeThrottle(w0*Kf, w1*Kf, w2*Kf, w3*Kf)
         p.resetDebugVisualizerCamera(8, 0, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
         # p.addUserDebugLine([0,0,0], (p.getLinkState(robotId, 1, 1))[0], [1.0,1.0,1.0], lifeTime = .05)
         # p.addUserDebugLine([0,0,0], [-.0, 0, .0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0, lifeTime = .1)
