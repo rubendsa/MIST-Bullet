@@ -3,7 +3,7 @@ from numpy import linalg as LA
 import pybullet as p
 import time
 import pybullet_data
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import math
 
 
@@ -107,6 +107,11 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState):
     K_rotation = .5 * K_rotation
     K_angularVelocity = .5 * K_angularVelocity
 
+    # K_position = 1 * K_position
+    # K_velocity = 1 * K_velocity
+    # K_rotation = 1 * K_rotation
+    # K_angularVelocity = 1 * K_angularVelocity
+
     # Kf = 1
     # Km = .1
     Kf = 2.02E-7
@@ -116,7 +121,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState):
     # Km = kf * .06
     L = .28
 
-    mass = 2.5 #Mass in [kg]
+    mass = 4 #Mass in [kg]
     gravity = 9.81
 
     # Get pose
@@ -176,7 +181,7 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState):
 
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
-    u1 = np.clip(u1, 0.0, 2000.0)
+    u1 = np.clip(u1, 0.0, 100.0)
     u24 = np.clip(u24, -40.0, 40.0)
     
     u = np.concatenate((u1, u24))
@@ -208,9 +213,9 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState):
         [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)],
         [ 0,    0,    1/(2*Kf*L),     1/(4*Km)]])
         
-
+    w2Limit = 77440000
     w2 = LA.inv(geo) @ u
-    w2 = np.clip(w2,0, None)
+    w2 = np.clip(w2,0, w2Limit) #8800 peak RPM -> w2 is angularvelocity^2 -> 8800^(2) =~ 77440000
     w = w2
     
     e = 0,0,0,0
@@ -219,19 +224,19 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState):
     if frameState == 0:
         tempStep = step
         w2 = geoTailSitter @ u
-        w2 = np.clip(w2,0, None)
+        w2 = np.clip(w2,0, w2Limit)
         w = w2
         e = geoTailSitterCtrlSurf @ u
         e = np.clip(e, -.5, .5)
 
     if frameState == 1:
         w2 = LA.inv(geo) @ u
-        w2 = np.clip(w2,0, None)
+        w2 = np.clip(w2,0, w2Limit)
         w = w2
         e = 0,0,0,0
 
     
-
+    # print("w:", w)
 
     return w,e
 
@@ -246,7 +251,7 @@ def applyAction(actionVector, robotId=robotId):
     # Km = .1
 
     Kf = 2.02E-7
-    Km = 2.02E-8
+    Km = 2.02E-8 # Roughly an order of magnitude less than kf. 
 
     # Kf = 8.54858e-06
     # Km = Kf * .06
@@ -369,15 +374,19 @@ def wingAero():
 
 # tailsitterAttitudeControl()
 if __name__ == "__main__":
-    simTime = 1000000
-    simDelay = .00001
+    simTime = 10000
+    simDelay = .001
     p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
     # p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
     p.resetBasePositionAndOrientation(robotId, [-10,0,10], [0,0,0,1]) # Staring position of robot
     
     # p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
     # p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
+    recordedElevonAngles = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
+    recordedHinge = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
+    recordedTestHinge = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
 
+    
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
         time.sleep(simDelay)
@@ -446,6 +455,13 @@ if __name__ == "__main__":
             
             
             applyAction([w0, w1, w2, w3, e0, e1, e2, e3, hingeAngle, hingeAngle, hingeAngle], robotId)
+            
+            # print("hingeIds:", p.getJointStates(robotId, hingeIds))
+
+            recordedTestHinge[0][i] = p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1])[0]
+            recordedTestHinge[1][i] = p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1])[1]
+            recordedTestHinge[2][i] = p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1])[2]
+            # print("euler angles:",p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1]))
             # p.applyExternalForce(robotId, 1, [0,1,0], [0,0,0], 2) #Apply m0 force[N] on link0, w.r.t. local frame
             # print("linkframe", p.WORLD_FRAME)
 
@@ -457,9 +473,19 @@ if __name__ == "__main__":
             # visualizeLinkFrame(0)
             Kf = 2.02E-7
             Km = 2.02E-8
+            # Kf = 1
             # visualizeThrottle(w0*Kf, w1*Kf, w2*Kf, w3*Kf)
         p.resetDebugVisualizerCamera(8, 0, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
         # p.addUserDebugLine([0,0,0], (p.getLinkState(robotId, 1, 1))[0], [1.0,1.0,1.0], lifeTime = .05)
         # p.addUserDebugLine([0,0,0], [-.0, 0, .0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0, lifeTime = .1)
+    
+    print("0 contents",recordedTestHinge[:][0])
+    while(1):
+        plt.figure(1)
+        plt.plot(recordedTestHinge[:][0])
+        plt.plot(recordedTestHinge[:][1])
+        plt.plot(recordedTestHinge[:][2])
+        plt.show()
+
 
 
