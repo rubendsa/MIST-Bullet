@@ -142,6 +142,12 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState):
                         [listBtoW[3], listBtoW[4], listBtoW[5]],
                         [listBtoW[6], listBtoW[7], listBtoW[8]]])
 
+    # rotFixedWing = np.array([[math.cos(1.57), 0, -math.sin(1.57)],
+    #                         [0, 1, 0],
+    #                         [math.sin(1.57), 0, math.cos(1.57)]])
+    
+    # rotBtoW = rotBtoW * np.linalg.inv(rotFixedWing)
+
     des_positionW, des_orientationW, des_velocityW, des_angular_velocityW = robotDesiredPoseWorld
     des_yaw = 0
     
@@ -214,7 +220,8 @@ def quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState):
         [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)],
         [ 0,    0,    1/(2*Kf*L),     1/(4*Km)]])
         
-    w2Limit = 77440000
+    # w2Limit = 77440000
+    w2Limit = 147440000
     w2 = LA.inv(geo) @ u
     w2 = np.clip(w2,0, w2Limit) #8800 peak RPM -> w2 is angularvelocity^2 -> 8800^(2) =~ 77440000
     w = w2
@@ -279,10 +286,11 @@ def applyAction(actionVector, robotId=robotId):
     p.applyExternalTorque(robotId, 2, [0,0, Mm3], 1) 
 
     # Torque for each Elevon
-    p.applyExternalTorque(robotId, -1, [0,2*e0,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 0, [0,2*e1,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 1, [0,2*e2,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 2, [0,2*e3,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+
+    p.applyExternalTorque(robotId, -1, [0,8*e0,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 0, [0,8*e1,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 1, [0,8*e2,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, 2, [0,8*e3,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
     # The difference in elevons induces a torque in the z axis for tailsitter. 
     p.applyExternalTorque(robotId, -1, [0,0,5*(e0+e1-e2-e3)], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
 
@@ -306,7 +314,7 @@ def applyAction(actionVector, robotId=robotId):
     p.setJointMotorControl2(robotId, hingeIds[2], p.POSITION_CONTROL, targetPosition=h2, maxVelocity=8, force=10000)
 
     # AERODYNAMICS
-    wingDynamics(-1)
+    wingDynamics(-1) # Apply lift, drag, and moments on each wing section according to their pose and velocity. 
     wingDynamics(0)
     wingDynamics(1)
     wingDynamics(2)
@@ -391,20 +399,6 @@ def computeCenterOfMass():
     return centerOfMass
 
 
-def wingAero():
-    # Based on control input (elevon angle and air vector), apply a force and moment on the wing section local frame. 
-    
-    # p.applyExternalForce(robotId, -1, [0,0,10], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
-    # p.applyExternalForce(robotId, 0, [0,0,0], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
-    # p.applyExternalForce(robotId, 1, [0,0,0], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
-    # p.applyExternalForce(robotId, 2, [0,0,0], [0,0,0], 1) #Apply m0 force[N] on link0, w.r.t. local frame
-    
-    p.applyExternalTorque(robotId, -1, [0,200,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 0, [0,200,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 1, [0,200,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-    p.applyExternalTorque(robotId, 2, [0,200,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
-
-
 def readAeroData():
     lines = loadtxt("T1_Re0.100_M0.00_N9.0.txt", unpack=False, skiprows=11)
     alphaRTable = lines[:,0]*3.1415/180
@@ -417,8 +411,8 @@ def readAeroData():
 
 # tailsitterAttitudeControl()
 if __name__ == "__main__":
-    simTime = 5000
-    simDelay = .001
+    simTime = 500
+    simDelay = .0000001
     p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
     # p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
     p.resetBasePositionAndOrientation(robotId, [-10,0,10], [0,0,0,1]) # Staring position of robot
@@ -451,7 +445,7 @@ if __name__ == "__main__":
         
         step = i
         if i>100:
-            des_positionW = [10,10,10]
+            des_positionW = [20,0,10]
 
             hingeAngle = 0
             frameState = 0
@@ -462,43 +456,43 @@ if __name__ == "__main__":
             e1, e2, e3, e0 = e
 
             
-            if step in range(1000, 1100):
-                hingeAngle = 1.57
-                frameState = 0
-                w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-                w1, w2, w3, w0 = w
-                e1, e2, e3, e0 = [0,0,0,0]
-            if step in range(1100, 2000):
-                hingeAngle = 1.57
-                frameState = 1
-                w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-                w1, w2, w3, w0 = w
-                e1, e2, e3, e0 = e
-            if step in range(2000,2100):
-                hingeAngle = 0
-                frameState = 0
-                w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-                w1, w2, w3, w0 = w
-                e1, e2, e3, e0 = [0,0,0,0]
-            if step in range(2100, 3000):
-                hingeAngle = 0
-                frameState = 0
-                w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-                w1, w2, w3, w0 = w
-                e1, e2, e3, e0 = e
+            # if step in range(1000, 1100):
+            #     hingeAngle = 1.57
+            #     frameState = 0
+            #     w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            #     w1, w2, w3, w0 = w
+            #     e1, e2, e3, e0 = [0,0,0,0]
+            # if step in range(1100, 2000):
+            #     hingeAngle = 1.57
+            #     frameState = 1
+            #     w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            #     w1, w2, w3, w0 = w
+            #     e1, e2, e3, e0 = e
+            # if step in range(2000,2100):
+            #     hingeAngle = 0
+            #     frameState = 0
+            #     w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            #     w1, w2, w3, w0 = w
+            #     e1, e2, e3, e0 = [0,0,0,0]
+            # if step in range(2100, 3000):
+            #     hingeAngle = 0
+            #     frameState = 0
+            #     w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            #     w1, w2, w3, w0 = w
+            #     e1, e2, e3, e0 = e
 
-            if step in range(3000, 3100):
-                hingeAngle = 1.57
-                frameState = 0
-                w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-                w1, w2, w3, w0 = w
-                e1, e2, e3, e0 = [0,0,0,0]
-            if step in range(3100, 4000):
-                hingeAngle = 1.57
-                frameState = 1
-                w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-                w1, w2, w3, w0 = w
-                e1, e2, e3, e0 = e
+            # if step in range(3000, 3100):
+            #     hingeAngle = 1.57
+            #     frameState = 0
+            #     w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            #     w1, w2, w3, w0 = w
+            #     e1, e2, e3, e0 = [0,0,0,0]
+            # if step in range(3100, 4000):
+            #     hingeAngle = 1.57
+            #     frameState = 1
+            #     w, e = quadAttitudeControl(robotId, robotDesiredPoseWorld, hingeAngle, frameState) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            #     w1, w2, w3, w0 = w
+            #     e1, e2, e3, e0 = e
            
             
 
@@ -508,27 +502,27 @@ if __name__ == "__main__":
             # print("hingeIds:", p.getJointStates(robotId, hingeIds))
 
             
-            vA = np.array(p.getLinkState(robotId, 0, 1)[6]) # Calculate Air-relative velocity vector Va
-            # print("vA:", vA)
-            listMat = p.getMatrixFromQuaternion(p.getLinkState(robotId, 0, 1)[1])
-            rotWtoB = np.array([[listMat[0], listMat[1], listMat[2]],
-                        [listMat[3], listMat[4], listMat[5]],
-                        [listMat[6], listMat[7], listMat[8]]])
-            vABody = np.linalg.inv(rotWtoB) @ vA
+            # vA = np.array(p.getLinkState(robotId, 0, 1)[6]) # Calculate Air-relative velocity vector Va
+            # # print("vA:", vA)
+            # listMat = p.getMatrixFromQuaternion(p.getLinkState(robotId, 0, 1)[1])
+            # rotWtoB = np.array([[listMat[0], listMat[1], listMat[2]],
+            #             [listMat[3], listMat[4], listMat[5]],
+            #             [listMat[6], listMat[7], listMat[8]]])
+            # vABody = np.linalg.inv(rotWtoB) @ vA
 
-            vNorm = (vABody.T @ vABody)**(1/2) # Magnitude of vehicle velocity
-            alphaR = math.atan2(vABody[0],abs(vABody[2]))
+            # vNorm = (vABody.T @ vABody)**(1/2) # Magnitude of vehicle velocity
+            # alphaR = math.atan2(vABody[0],abs(vABody[2]))
 
-            recordedvA[0][i] = vA[0]
-            recordedvA[1][i] = vA[1]
-            recordedvA[2][i] = vA[2]
-            recordedvABody[0][i] = vABody[0]
-            recordedvABody[1][i] = vABody[1]
-            recordedvABody[2][i] = vABody[2]
-            recordedTestHinge[0][i] = p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1])[0]
-            recordedTestHinge[1][i] = p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1])[1]
-            recordedTestHinge[2][i] = p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1])[2]
-            recorded_alphaR[0][i] = alphaR * 180/3.1415
+            # recordedvA[0][i] = vA[0]
+            # recordedvA[1][i] = vA[1]
+            # recordedvA[2][i] = vA[2]
+            # recordedvABody[0][i] = vABody[0]
+            # recordedvABody[1][i] = vABody[1]
+            # recordedvABody[2][i] = vABody[2]
+            # recordedTestHinge[0][i] = p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1])[0]
+            # recordedTestHinge[1][i] = p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1])[1]
+            # recordedTestHinge[2][i] = p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1])[2]
+            # recorded_alphaR[0][i] = alphaR * 180/3.1415
             
             # print("euler angles:",p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1]))
             # p.applyExternalForce(robotId, 1, [0,1,0], [0,0,0], 2) #Apply m0 force[N] on link0, w.r.t. local frame
@@ -544,30 +538,30 @@ if __name__ == "__main__":
             Km = 2.02E-8
             # Kf = 1
             # visualizeThrottle(w0*Kf, w1*Kf, w2*Kf, w3*Kf)
-        p.resetDebugVisualizerCamera(8, 0, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
+        # p.resetDebugVisualizerCamera(8, 0, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
         # p.addUserDebugLine([0,0,0], (p.getLinkState(robotId, 1, 1))[0], [1.0,1.0,1.0], lifeTime = .05)
         # p.addUserDebugLine([0,0,0], [-.0, 0, .0], [1.0,0.0,0.0], parentObjectUniqueId = 1, parentLinkIndex = 0, lifeTime = .1)
     
     print("0 contents",recordedTestHinge[:][0])
-    while(1):
-        plt.figure(1)
-        plt.plot(recordedTestHinge[:][0])
-        plt.plot(recordedTestHinge[:][1])
-        plt.plot(recordedTestHinge[:][2])
+    # while(1):
+    #     plt.figure(1)
+    #     plt.plot(recordedTestHinge[:][0])
+    #     plt.plot(recordedTestHinge[:][1])
+    #     plt.plot(recordedTestHinge[:][2])
         
-        plt.figure(2)
-        plt.plot(recordedvA[:][0], 'r--')
-        plt.plot(recordedvA[:][1], 'g--')
-        plt.plot(recordedvA[:][2], 'b--')
-        plt.plot(recordedvABody[:][0],'r')
-        plt.plot(recordedvABody[:][1],'g')
-        plt.plot(recordedvABody[:][2],'b')
+    #     plt.figure(2)
+    #     plt.plot(recordedvA[:][0], 'r--')
+    #     plt.plot(recordedvA[:][1], 'g--')
+    #     plt.plot(recordedvA[:][2], 'b--')
+    #     plt.plot(recordedvABody[:][0],'r')
+    #     plt.plot(recordedvABody[:][1],'g')
+    #     plt.plot(recordedvABody[:][2],'b')
 
-        plt.figure(3)
-        plt.plot(recorded_alphaR[:][0], 'r')
+    #     plt.figure(3)
+    #     plt.plot(recorded_alphaR[:][0], 'r')
 
 
-        plt.show()
+    #     plt.show()
 
 
 
