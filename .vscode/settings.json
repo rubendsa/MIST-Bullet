@@ -1,4 +1,4 @@
 {
     "python.linting.pylintEnabled": false,
-    "python.pythonPath": "/Users/rubendsa/anaconda3/envs/Testpybullet/bin/python"
+    "python.pythonPath": "/Users/rubendsa/anaconda3/bin/python"
 }

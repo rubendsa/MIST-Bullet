@@ -1,5 +1,6 @@
 import numpy as np
 from numpy import linalg as LA
+from numpy import loadtxt
 import pybullet as p
 import time
 import pybullet_data
@@ -304,6 +305,45 @@ def applyAction(actionVector, robotId=robotId):
     p.setJointMotorControl2(robotId, hingeIds[1], p.POSITION_CONTROL, targetPosition=h1, maxVelocity=8, force=10000)
     p.setJointMotorControl2(robotId, hingeIds[2], p.POSITION_CONTROL, targetPosition=h2, maxVelocity=8, force=10000)
 
+    # AERODYNAMICS
+    wingDynamics(-1)
+    wingDynamics(0)
+    wingDynamics(1)
+    wingDynamics(2)
+
+
+def wingDynamics(wingId):
+    sArea = 0.634 # area in m^2 from Xflr5
+    rho = 1.225 # kg/m^3 International Standard Atmosphere air density
+    if wingId == -1:
+        vA = p.getBaseVelocity(robotId)[0]
+        listMat = p.getMatrixFromQuaternion(np.array(p.getBasePositionAndOrientation(robotId)[1]))
+    else:
+        vA = np.array(p.getLinkState(robotId, wingId, 1)[6]) # Calculate Air-relative velocity vector Va
+        listMat = p.getMatrixFromQuaternion(p.getLinkState(robotId, wingId, 1)[1])
+
+    
+    # print("vA:", vA)
+    rotWtoB = np.array([[listMat[0], listMat[1], listMat[2]],
+                        [listMat[3], listMat[4], listMat[5]],
+                        [listMat[6], listMat[7], listMat[8]]])
+    vABody = np.linalg.inv(rotWtoB) @ vA
+    # print("vABody:", vABody)
+
+    vNorm = (vABody.T @ vABody)**(1/2) # Magnitude of vehicle velocity
+    alphar = math.atan2(vABody[0],abs(vABody[2])) # Angle of attack in radians. Axis rotated 90 about y. Z is the old X, X is the old Z 
+    betar = math.asin(vABody[1]/vNorm) # Side-slip angle - DOUBLE CHECK COORDINATE FRAME N.E.D. VS N.W.U.
+    
+    alphaRTable, cLTable, cDTable, cMTable = readAeroData()
+    # print("alphar:", alphar)
+    cL = np.interp(alphar, alphaRTable, cLTable)
+    cD = np.interp(alphar, alphaRTable, cDTable)
+    cM = np.interp(alphar, alphaRTable, cMTable)
+    # print("cL", cL, "cD", cD, "cM", cM)
+    FL = cL * (1/2) * sArea * rho * (vNorm**2)
+    # print("FL:", FL, "alphar", alphar, "cL:", cL)
+    p.applyExternalForce(robotId, wingId, [-FL,0, 0], [0,0,0], 1)
+
 # State Vector
 def getUAVState(robotId=robotId):
     a, b, c, d, e, f, g, h = p.getLinkState(robotId, 0, 1)
@@ -341,18 +381,13 @@ def visualizeCenterOfMass():
 def computeCenterOfMass():
     allLinkPositions=[]    #TODO: Refactor this.
 
-
     allLinkPositions.append((p.getBasePositionAndOrientation(robotId))[0])
     for i in range(0, 3):
-        # a[i], b[i], c[i], d[i], e[i], f[i], g[i], h[i] = p.getLinkState(robotId, 0, 1)
         allLinkPositions.append((p.getLinkState(robotId, i, 1))[0])
-        # print("a", a)
-        # b.append(a[4])
-    
+
     centerOfMass = np.sum(allLinkPositions, axis = 0)/4 #Average x, y, z, of all 4 link CoMs 
     centerOfMass[2] = centerOfMass[2] -.01 # Z intertial offset used in the urdf file
 
-    # print("centerOfMass:", centerOfMass)
     return centerOfMass
 
 
@@ -370,11 +405,19 @@ def wingAero():
     p.applyExternalTorque(robotId, 2, [0,200,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
 
 
+def readAeroData():
+    lines = loadtxt("T1_Re0.100_M0.00_N9.0.txt", unpack=False, skiprows=11)
+    alphaRTable = lines[:,0]*3.1415/180
+    cLTable = lines[:,1]
+    cDTable = lines[:,2]
+    cMTable = lines[:,4]
+    return alphaRTable, cLTable, cDTable, cMTable
+
 ###################     RUN SIMULATION     #####################
 
 # tailsitterAttitudeControl()
 if __name__ == "__main__":
-    simTime = 10000
+    simTime = 5000
     simDelay = .001
     p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
     # p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
@@ -385,8 +428,13 @@ if __name__ == "__main__":
     recordedElevonAngles = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
     recordedHinge = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
     recordedTestHinge = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
+    recordedvA = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
+    recordedvABody = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
+    recorded_alphaR = [[0.] * int(simTime)]
 
-    
+
+    readAeroData()
+
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
         time.sleep(simDelay)
@@ -453,14 +501,35 @@ if __name__ == "__main__":
                 e1, e2, e3, e0 = e
            
             
+
             
             applyAction([w0, w1, w2, w3, e0, e1, e2, e3, hingeAngle, hingeAngle, hingeAngle], robotId)
             
             # print("hingeIds:", p.getJointStates(robotId, hingeIds))
 
+            
+            vA = np.array(p.getLinkState(robotId, 0, 1)[6]) # Calculate Air-relative velocity vector Va
+            # print("vA:", vA)
+            listMat = p.getMatrixFromQuaternion(p.getLinkState(robotId, 0, 1)[1])
+            rotWtoB = np.array([[listMat[0], listMat[1], listMat[2]],
+                        [listMat[3], listMat[4], listMat[5]],
+                        [listMat[6], listMat[7], listMat[8]]])
+            vABody = np.linalg.inv(rotWtoB) @ vA
+
+            vNorm = (vABody.T @ vABody)**(1/2) # Magnitude of vehicle velocity
+            alphaR = math.atan2(vABody[0],abs(vABody[2]))
+
+            recordedvA[0][i] = vA[0]
+            recordedvA[1][i] = vA[1]
+            recordedvA[2][i] = vA[2]
+            recordedvABody[0][i] = vABody[0]
+            recordedvABody[1][i] = vABody[1]
+            recordedvABody[2][i] = vABody[2]
             recordedTestHinge[0][i] = p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1])[0]
             recordedTestHinge[1][i] = p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1])[1]
             recordedTestHinge[2][i] = p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1])[2]
+            recorded_alphaR[0][i] = alphaR * 180/3.1415
+            
             # print("euler angles:",p.getEulerFromQuaternion(p.getLinkState(robotId, ctrlSurfIds[0])[1]))
             # p.applyExternalForce(robotId, 1, [0,1,0], [0,0,0], 2) #Apply m0 force[N] on link0, w.r.t. local frame
             # print("linkframe", p.WORLD_FRAME)
@@ -485,6 +554,19 @@ if __name__ == "__main__":
         plt.plot(recordedTestHinge[:][0])
         plt.plot(recordedTestHinge[:][1])
         plt.plot(recordedTestHinge[:][2])
+        
+        plt.figure(2)
+        plt.plot(recordedvA[:][0], 'r--')
+        plt.plot(recordedvA[:][1], 'g--')
+        plt.plot(recordedvA[:][2], 'b--')
+        plt.plot(recordedvABody[:][0],'r')
+        plt.plot(recordedvABody[:][1],'g')
+        plt.plot(recordedvABody[:][2],'b')
+
+        plt.figure(3)
+        plt.plot(recorded_alphaR[:][0], 'r')
+
+
         plt.show()
 
 
