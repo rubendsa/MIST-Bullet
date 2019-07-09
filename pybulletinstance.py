@@ -1,6 +1,7 @@
 import pybullet
 import pybullet_utils.bullet_client as bc
 import pybullet_data
+import numpy as np 
 
 class PyBulletInstance():
 
@@ -11,7 +12,7 @@ class PyBulletInstance():
             self.client = bc.BulletClient(connection_mode=pybullet.DIRECT)
         self.client.setAdditionalSearchPath(pybullet_data.getDataPath())
         self.client.setGravity(0,0,-9.81)
-        self.robotID = self.client.loadURDF("C:/Users/user/Transformation/MIST_Bullet/MIST.urdf", [0, 0, 1], pybullet.getQuaternionFromEuler([0,0,0]))
+        self.robotID = self.client.loadURDF("./MIST.urdf", [0, 0, 1], pybullet.getQuaternionFromEuler([0,0,0]))
         self.hingeIDs = [0, 1, 2]
         self.ctrlSurfIDs = [9, 7, 5, 3]
         self.propIDs = [10, 8, 6, 4]
@@ -19,19 +20,19 @@ class PyBulletInstance():
 
     def setHingePosition(self, hingePosition):
         hingeForce = 100
-        p.setJointMotorControl2(self.robotID,
+        pybullet.setJointMotorControl2(self.robotID,
                             jointIndex=0,
-                            controlMode=p.POSITION_CONTROL,
+                            controlMode=pybullet.POSITION_CONTROL,
                             targetPosition=hingePosition,
                             force=hingeForce)
-        p.setJointMotorControl2(self.robotID,
+        pybullet.setJointMotorControl2(self.robotID,
                             jointIndex=1,
-                            controlMode=p.POSITION_CONTROL,
+                            controlMode=pybullet.POSITION_CONTROL,
                             targetPosition=hingePosition,
                             force=hingeForce)
-        p.setJointMotorControl2(self.robotID,
+        pybullet.setJointMotorControl2(self.robotID,
                             jointIndex=2,
-                            controlMode=p.POSITION_CONTROL,
+                            controlMode=pybullet.POSITION_CONTROL,
                             targetPosition=hingePosition,
                             force=hingeForce)
 
@@ -70,10 +71,10 @@ class PyBulletInstance():
 
 
         # Visual of propeller spinning (not critical)
-        self.client.setJointMotorControl2(self.robotID, self.propIDs[0], pybullet.VELOCITY_CONTROL, targetVelocity=m0*10, force=1000) 
-        self.client.setJointMotorControl2(self.robotID, self.propIDs[1], pybullet.VELOCITY_CONTROL, targetVelocity=m1*10, force=1000)
-        self.client.setJointMotorControl2(self.robotID, self.propIDs[2], pybullet.VELOCITY_CONTROL, targetVelocity=m2*10, force=1000)
-        self.client.setJointMotorControl2(self.robotID, self.propIDs[3], pybullet.VELOCITY_CONTROL, targetVelocity=m3*10, force=1000)
+        self.client.setJointMotorControl2(self.robotID, self.propIDs[0], pybullet.VELOCITY_CONTROL, targetVelocity=w0*10, force=1000) 
+        self.client.setJointMotorControl2(self.robotID, self.propIDs[1], pybullet.VELOCITY_CONTROL, targetVelocity=w1*10, force=1000)
+        self.client.setJointMotorControl2(self.robotID, self.propIDs[2], pybullet.VELOCITY_CONTROL, targetVelocity=w2*10, force=1000)
+        self.client.setJointMotorControl2(self.robotID, self.propIDs[3], pybullet.VELOCITY_CONTROL, targetVelocity=w3*10, force=1000)
         
         # Control surface deflection [rads]
         self.client.setJointMotorControl2(self.robotID, self.ctrlSurfIDs[0], pybullet.POSITION_CONTROL, targetPosition=c0, force=1000)
@@ -90,19 +91,24 @@ class PyBulletInstance():
     def getUAVState(self):
         a, b, c, d, e, f, g, h = self.client.getLinkState(self.robotID, 0, 1)
         # position = e # x,y,z
-        position = computeCenterOfMass():
+        position = self.computeCenterOfMass()
         orientation = f #Quaternion
         velocity = g 
         angular_velocity = h
         return position, orientation, velocity, angular_velocity 
+    
+    #1D state vector
+    def getState(self):
+        p, o, v, a_v = self.getUAVState()
+        return np.array([*p, *o, *v, *a_v])
 
-    def computeCenterOfMass():
+    def computeCenterOfMass(self):
         allLinkPositions=[]    #TODO: Refactor this.
 
 
-        allLinkPositions.append((p.getBasePositionAndOrientation(robotId))[0])
+        allLinkPositions.append((pybullet.getBasePositionAndOrientation(self.robotID))[0])
         for i in range(0, 3):
-            allLinkPositions.append((p.getLinkState(robotId, i, 1))[0])
+            allLinkPositions.append((pybullet.getLinkState(self.robotID, i, 1))[0])
 
         
         centerOfMass = np.sum(allLinkPositions, axis = 0)/4 #Average x, y, z, of all 4 link CoMs 
@@ -116,3 +122,6 @@ class PyBulletInstance():
 
     def set_to_pos_and_q(self, pos, q):
         self.client.resetBasePositionAndOrientation(self.robotID, pos, q)
+
+    def reset(self):
+        self.set_to_pos_and_q([0, 0, 0], [0, 0, 0, 1])

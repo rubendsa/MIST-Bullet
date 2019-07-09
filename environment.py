@@ -98,7 +98,7 @@ class PyBulletProcess(multiprocessing.Process):
             pi = self.input_queue.get()
             current_state = pi.start_state  
             traj = Trajectory()
-            env.set_to_pos_and_q(current_state.pos, current_state.q)
+            env.set_to_pos_and_q( .pos, current_state.q)
             if pi.load_model:
                 restore_most_recent(self.save_dir, saver, sess)  
 
