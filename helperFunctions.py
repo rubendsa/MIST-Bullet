@@ -3,8 +3,18 @@ import time
 import pybullet_data
 
 import numpy as np
+from numpy import loadtxt
+
 
 # Various helper functions for physics calculations
+def readAeroData(fileName):
+    lines = loadtxt(fileName, unpack=False, skiprows=11)
+    alphaRTable = lines[:,0]*3.1415/180
+    cLTable = lines[:,1]
+    cDTable = lines[:,2]
+    cMTable = lines[:,4]
+    return alphaRTable, cLTable, cDTable, cMTable
+
 def computeCenterOfMass(robotId):
     allLinkPositions=[]    #TODO: Refactor this.
 

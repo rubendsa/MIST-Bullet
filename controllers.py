@@ -9,9 +9,12 @@ from numpy import linalg as LA
 import helperFunctions as hf
 
 
+from numba import jit
+
+
 
 # Controllers for the UAV
-
+# @jit(nopython=True)
 def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, hingeAngle, frameState, ctrlMode):
 
     # Set Gains and Parameters TODO: Move this out

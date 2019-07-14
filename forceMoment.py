@@ -5,11 +5,13 @@ import time
 import pybullet_data
 
 import wingDynamics as wd
+from numba import jit
 
 
 
 # Apply forces and moments
 
+# @jit(nopython = True)
 def applyAction(actionVector, robotId, hingeIds, ctrlSurfIds, propIds):
     # p.connect(p.GUI)
     

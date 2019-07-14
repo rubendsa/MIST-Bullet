@@ -6,10 +6,12 @@
   <link name="link0">
     <visual name='link0_visual'>
         <origin rpy="0 0 0" xyz="0.0 .28 0"/>
-
         <geometry>
-            <mesh filename="package://meshes/mist_mainwing.STL" scale="0.001 0.001 0.001"/>
+            <box size="0.32 0.26 0.085"/>
         </geometry>
+        <material name="Cyan1">
+            <color rgba="0 0.9 0.9 1.0"/>
+        </material>
       <material name="white">
         <color rgba="1 1 1 1"/>
       </material>
@@ -25,7 +27,7 @@
     <inertial>
       <mass value="1"/>
       <!-- <origin rpy="0 0 0" xyz="-.003 .28 -.01"/> -->
-      <origin rpy="0 0 0" xyz="-.003 .28 0"/>
+      <origin rpy="0 0 0" xyz="-.003 .28 .01"/>
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
@@ -54,7 +56,7 @@
     <inertial>
       <mass value="1"/>
       <!-- <origin rpy="0 0 0" xyz="-.003 .28 -.01"/> -->
-      <origin rpy="0 0 0" xyz="-.003 .28 0"/>
+      <origin rpy="0 0 0" xyz="-.003 .28 .01"/>
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
@@ -84,7 +86,7 @@
     <inertial>
       <mass value="1"/>
       <!-- <origin rpy="0 0 0" xyz="-.003 .28 -.01"/> -->
-      <origin rpy="0 0 0" xyz="-.003 .28 0"/>
+      <origin rpy="0 0 0" xyz="-.003 .28 .01"/>
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
@@ -113,7 +115,7 @@
     <inertial>
       <mass value="1"/>
       <!-- <origin rpy="0 0 0" xyz="-.003 .28 -.01"/> -->
-      <origin rpy="0 0 0" xyz="-.003 .28 0"/>
+      <origin rpy="0 0 0" xyz="-.003 .28 .01"/>
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
