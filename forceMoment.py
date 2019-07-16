@@ -50,10 +50,14 @@ def applyAction(actionVector, robotId, hingeIds, ctrlSurfIds, propIds):
 
     # Torque for each Elevon
     vA, vABody, vNorm, alphar, betar = wd.calcFreeStreamVelocity(robotId, 1)
-    eM_0 = .5*(.1*(e0 * Fm0) + (e0 * vNorm))
-    eM_1 = .5*(.1*(e1 * Fm1) + (e1 * vNorm))
-    eM_2 = .5*(.1*(e2 * Fm2) + (e2 * vNorm))
-    eM_3 = .5*(.1*(e3 * Fm3) + (e3 * vNorm))
+    # eM_0 = 1*(.1*(e0 * Fm0) + (e0 * vNorm))
+    # eM_1 = 1*(.1*(e1 * Fm1) + (e1 * vNorm))
+    # eM_2 = 1*(.1*(e2 * Fm2) + (e2 * vNorm))
+    # eM_3 = 1*(.1*(e3 * Fm3) + (e3 * vNorm))
+    eM_0 = 30*e0
+    eM_1 = 30*e1
+    eM_2 = 30*e2
+    eM_3 = 30*e3
     # print("eM_0", eM_0, "vNorm", vNorm)
     p.applyExternalTorque(robotId, -1, [0,eM_0,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
     p.applyExternalTorque(robotId, 0, [0,eM_1,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 

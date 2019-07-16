@@ -29,7 +29,7 @@ p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0) # Removes the GUI text boxes
 p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
 p.setGravity(0,0,-9.81)
 planeId = p.loadURDF("plane.urdf")
-# p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "transformer2.mp4")	
+# p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "dropTest_vel5_test.mp4")	
 
 # Load MIST-UAV
 robotStartPos = [0,0,1]
@@ -45,11 +45,11 @@ propIds = [10, 8, 6, 4]
 
 if __name__ == "__main__":
     simTime = 5000
-    simDelay = .001
+    simDelay = .0001
     p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
     # p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
-    p.resetBasePositionAndOrientation(robotId, [10,0,20], p.getQuaternionFromEuler([0,30,0])) # Staring position of robot
-    p.resetBaseVelocity(robotId, [-15,0,0], [0,0,0])
+    p.resetBasePositionAndOrientation(robotId, [10,0,20], p.getQuaternionFromEuler((3.1415/180)*np.array([0,-80,90]))) # Staring position of robot
+    p.resetBaseVelocity(robotId, [0,0,0], [0,0,0])
 
     # p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
     # p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
@@ -86,18 +86,19 @@ if __name__ == "__main__":
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
             w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, hingeAngle, frameState, ctrlMode = 0) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
             w1, w2, w3, w0 = w
-            e1, e2, e3, e0 = [0,0,0,0]
+            e1, e2, e3, e0 = e
 
             
-            # if step in range(200, 500):
-            #     hingeAngle = 0
-            #     frameState = 0
-            #     des_yawW = 0
-            #     des_orientationW = p.getQuaternionFromEuler([1.57,-1.57,1.57]) # [roll, pitch, yaw]
-            #     robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
-            #     w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, hingeAngle, frameState, ctrlMode = 0) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-            #     w1, w2, w3, w0 = w
-            #     e1, e2, e3, e0 = e
+            if step in range(200, 5000):
+                hingeAngle = 0
+                frameState = 0
+                des_yawW = 0
+                des_positionW = [20,0,20]
+                des_orientationW = p.getQuaternionFromEuler([1.57,-1.57,1.57]) # [roll, pitch, yaw]
+                robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
+                w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, hingeAngle, frameState, ctrlMode = 0) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+                w1, w2, w3, w0 = w
+                e1, e2, e3, e0 = e
             # if step in range(500, 2000):
             #     hingeAngle = 1.57
             #     frameState = 1
@@ -193,7 +194,7 @@ if __name__ == "__main__":
             Km = 2.02E-8
             # Kf = 1
             # visualizeThrottle(w0*Kf, w1*Kf, w2*Kf, w3*Kf)
-            # fm.applyAction([w0, w1, w2, w3, e0, e1, e2, e3, hingeAngle, hingeAngle, hingeAngle], robotId, hingeIds, ctrlSurfIds, propIds)
+            fm.applyAction([w0, w1, w2, w3, e0, e1, e2, e3, hingeAngle, hingeAngle, hingeAngle], robotId, hingeIds, ctrlSurfIds, propIds)
 
         # hf.visualizeLinkFrame(-1)
         p.resetDebugVisualizerCamera(4, 0, -20, hf.computeCenterOfMass(robotId)) # Camera position (distance, yaw, pitch, focuspoint)
