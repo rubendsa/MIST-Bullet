@@ -1,7 +1,7 @@
 import tensorflow as tf 
 import numpy as np 
 import time 
-
+import utils 
 
 from ppo import PPO 
 from networks import general_mlp 
@@ -9,46 +9,17 @@ from hp import DEFAULT_HPSTRUCT, DEBUG_HPSTRUCT, QUADROTOR_HPSTRUCT
 from mpi import proc_id
 from pybulletinstance import PyBulletInstance
 
-#TODO put all this garbage in HPS
-#todo check if slicing is correct
-#idk if this is a good signal
-# def calc_cost(state, action):
-#     return (4e-1 * np.linalg.norm(state[0:3])) \
-#         + (2e-2 * np.linalg.norm(state[7:10])) \
-#         + (2e-2 * np.linalg.norm(state[10:])) \
-#         + (2e-2 * np.linalg.norm(action))
-#this just penalizes position deviance from (0, 0, 0)
-#being with 5 is rewarded positively
-def calc_reward(state):
-    position_reward = (-1 * np.linalg.norm(state[0:3])) + 5
-    angular_vel_reward = (-1 * np.linalg.norm(state[10:]))
-    return position_reward 
-
-def clip(val, clip):
-    if val < -clip:
-        val = -clip
-    elif val > clip:
-        val = clip 
-    return val
-#modifies action within parameters
-def action_mod(a):
-    a *= 50 #action scale
-    a = [clip(x, 17) for x in a]
-    a = np.concatenate((a, [0, 0, 0, 0, 1.57, 1.57, 1.57]))
-    return a
-
-    
 x_ph = tf.placeholder(dtype=tf.float32, shape=(None, 13), name="x_input")
 y_ph, v_ph = general_mlp(x_ph, output_dim=4)
-
 
 hps = QUADROTOR_HPSTRUCT()
 
 ppo = PPO(x_ph, y_ph, v_ph, discrete=False, hp_struct=hps, name="QuadrotorTest")
-ppo.restore()
+# ppo.restore()
 
 env = PyBulletInstance(GUI=False)
 env.reset_random()
+
 o = env.getState()
 r = 0
 d = False 
@@ -61,13 +32,12 @@ for epoch in range(ppo.hps.epochs):
         a, v_t, logp_t = ppo.get_action_ops(o)
 
         ppo.buf.store(obs=o, act=a, rew=r, val=v_t, logp=logp_t)
-        # print(a[0])
-        action_to_apply = action_mod(a[0])
+        action_to_apply = utils.quadrotor_action_mod(a[0])
         
         env.applyAction(action_to_apply) 
         env.step()
         o = env.getState()
-        r = calc_reward(o)
+        r = utils.quadrotor_reward(o)
         ep_ret += r
         ep_len += 1
 
@@ -76,11 +46,8 @@ for epoch in range(ppo.hps.epochs):
 
         terminal = d 
         if terminal or (t == ppo.local_steps_per_epoch- 1):
-            # if not terminal:
-                # print("Warning: Traj cut off by epoch at {} steps".format(ep_len))
             last_val = r if d else ppo.get_v(o)
             ppo.buf.finish_path(last_val)
-            # print(a[0])
             env.reset_random()
             o = env.getState()
             r = 0
@@ -93,9 +60,10 @@ for epoch in range(ppo.hps.epochs):
     print("Done with epoch {} in proc #{}".format(epoch, proc_id()))
     ppo.update()
 
-    #only need to save in 1 process
-    #ideally this would occur in the first process to hit this point
-    #but idk how to sync it currently
+    """
+    Saving only needs to occur in 1 process
+    TODO save only in the first process that reaches this point
+    """
     if epoch % ppo.hps.save_freq == 0 and proc_id() == 0:
         ppo.save() 
         print("Saved!")

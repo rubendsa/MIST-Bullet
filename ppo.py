@@ -1,44 +1,31 @@
 import tensorflow as tf 
 import numpy as np 
-import scipy.signal 
+import utils 
 from hp import HPStruct, DEFAULT_HPSTRUCT
 from mpi import mpi_statistics_scalar, MpiAdamOptimizer, mpi_avg, num_procs, sync_all_params
 
+"""
+PPO modified from OpenAI's SpinningUp implementation
+It's significantly less interconnected than their's is
+The goal of this was to make it general purpose:
+Easy to interface with any network architecture or environment, 
+and readable enough that implementing in another framework (or TF 2.0, hopefully) should be trivial
 
-#########################################
-#                                       #
-#          Utility Functions            #
-#                                       #
-#########################################
-#"Magic from rllab"
-def discount_cumsum(x, discount):
-    return scipy.signal.lfilter([1], [1, float(-discount)], x[::-1], axis=0)[::-1]
-
-# def statistics_scalar(x):
-#     x = np.array(x, dtype=np.float32)
-#     n = x.size
-#     mean = np.mean(x)
-#     sum_sq = np.sum((x - mean)**2)
-
-#     std = np.sqrt(sum_sq / n)
-#     return mean, std
-
-def gaussian_likelihood(x, mu, log_std, eps=1e-8, name="logp"):
-    pre_sum = -0.5 * (((x-mu)/(tf.exp(log_std)+eps))**2 + 2*log_std + np.log(2*np.pi))
-    return tf.reduce_sum(pre_sum, axis=1, name=name)
-
-def combined_shape(length, shape=None):
-    if shape is None:
-        return (length,)
-    if np.isscalar(shape):
-        return (length, shape)
-    return (length, *shape)
+This should run fine in a single process, however if necessary the MPI calls can
+be converted to single process as such:
+Replace mpi_statistics_scalar, mpi_avg, MpiAdamOptimizer with their single process equivalents
+Remove all instances of dividing steps_per_epoch amongst processes
+Remove sync_all_params call
+"""
 
 class PPOBuffer:
+    """
+    Buffer that holds observation from a single epoch
+    """
 
     def __init__(self, obs_dim, act_dim, size, gamma=0.99, lam=0.95):
-        self.obs_buf = np.zeros(combined_shape(size, obs_dim), dtype=np.float32)
-        self.act_buf = np.zeros(combined_shape(size, act_dim), dtype=np.float32) #this is wierd with discrete action spaces
+        self.obs_buf = np.zeros(utils.combined_shape(size, obs_dim), dtype=np.float32)
+        self.act_buf = np.zeros(utils.combined_shape(size, act_dim), dtype=np.float32)
         self.adv_buf = np.zeros(size, dtype=np.float32)
         self.rew_buf = np.zeros(size, dtype=np.float32)
         self.ret_buf = np.zeros(size, dtype=np.float32)
@@ -46,9 +33,13 @@ class PPOBuffer:
         self.logp_buf = np.zeros(size, dtype=np.float32)
         self.gamma, self.lam = gamma, lam 
         self.ptr, self.path_start_idx, self.max_size = 0, 0, size 
-    
-    #Keyword only to avoid confusion (obs, act, rew are often single-letter variables in practice)
+
     def store(self, *, obs, act, rew, val, logp):
+        """
+        Adds memory to the buffer
+        Keyword-only to avoid confusion:
+        Inputs are often single-letter variables in practice, which is *super* error-prone
+        """
         assert self.ptr < self.max_size
         self.obs_buf[self.ptr] = obs 
         self.act_buf[self.ptr] = act 
@@ -57,20 +48,26 @@ class PPOBuffer:
         self.logp_buf[self.ptr] = logp 
         self.ptr += 1
 
-    #calculates terminal values 
     def finish_path(self, last_val=0):
+        """
+        Runs along the path to calculate the terminal values
+        """
         path_slice = slice(self.path_start_idx, self.ptr)
         rews = np.append(self.rew_buf[path_slice], last_val)
         vals = np.append(self.val_buf[path_slice], last_val)
 
         deltas = rews[:-1] + self.gamma * vals[1:] - vals[:-1]
-        self.adv_buf[path_slice] = discount_cumsum(deltas, self.gamma * self.lam)
+        self.adv_buf[path_slice] = utils.discount_cumsum(deltas, self.gamma * self.lam)
 
-        self.ret_buf[path_slice] = discount_cumsum(rews, self.gamma)[:-1]
+        self.ret_buf[path_slice] = utils.discount_cumsum(rews, self.gamma)[:-1]
         self.path_start_idx = self.ptr 
 
     def get(self):
-        assert self.ptr == self.max_size #not sure about why this works
+        """
+        Returns all the buffers (with advantage averaged across processes)
+        Sets buffer pointers back to start, resulting in a 'fresh' buffer
+        """
+        assert self.ptr == self.max_size
         self.ptr, self.path_start_idx = 0, 0
 
         adv_mean, adv_std = mpi_statistics_scalar(self.adv_buf)
@@ -79,31 +76,28 @@ class PPOBuffer:
         return [self.obs_buf, self.act_buf, self.adv_buf, self.ret_buf, self.logp_buf]
 
 class PPO():
-
     """
-    x_ph is the x input placeholder
-    y_ph is the output placeholder of an >ALREADY DEFINED< network (logits or mu depending on discrete/continuous)
-    v_ph is the placeholder for the value network (generally the same framework as the y_ph network with a single output instead of the action vector)
-    discrete indicates whether the output of the network is dicrete or not
-        true will yield a categorical policy
-        false will yield a gaussian policy
-    hp_struct is a "struct" (dummy class) for holding hyperparameters
-    save_path is directory to save the session to
-    name is name to save with
+    Proximal Policy Optimization (PPO)
+    Takes a defined tensorflow graph containing an input, an ouput, and a value output
+    Given a full PPOBuffer, will update the network accordingly
 
-    all dimensioning happens automatically
-    Assumptions:
-    placeholders have the correct dims
-    y_ph is 2-dimensional, (batch, action_size) (1d action vectors) (the auto-dimensioning breaks if this doesn't hold true)
-    x_ph can probably be whatever shape you want (might break buffer)
-    v_ph (end of value network) should be size one, but there is no requirement that the network be the same structure as y_ph
-        just that x_ph is the starting placeholder for both graphs
-    if you don't pass in a hp_struct you're fine with default hyperparameters
+    Implemented for TF 1.x, so tf.compat.v1 is needed pretty often
+    TODO decide if upgrading is viable
     """
+
     def __init__(self, x_ph, y_ph, v_ph, discrete=True, hp_struct=None, save_path="./models/", name="ppo_model"):
+        """
+        x_ph, y_ph, v_ph tensors from an already defined network graph
+        discrete indicates the type of network output
+            true will yield a categorical policy
+            false will yield a gaussian policy
+        hp_struct contains hyperparameters, see hp.py
+        save_path is the directory to save to
+        name is the name to stay with
+        """
         self.x_ph = x_ph 
         self.y_ph = y_ph
-        #hps -> hyperparameters (most are used once so I choose to not expand them into their own variables)
+       
         if hp_struct is None:
             self.hps = DEFAULT_HPSTRUCT()
         else:
@@ -115,7 +109,7 @@ class PPO():
         self.logp_old_ph = tf.placeholder(dtype=tf.float32, shape=(None), name="logp_old")
 
         with tf.compat.v1.variable_scope("pi"):
-            if discrete: #categorical policy
+            if discrete: #Categorical policy
                 logits = y_ph #technicality
                 logp_all = tf.nn.log_softmax(logits)
                 self.pi = tf.squeeze(tf.multinomial(logits, 1), axis=1, name="pi")
@@ -123,26 +117,24 @@ class PPO():
                 act_dim = logits.get_shape()[-1]
                 self.logp = tf.reduce_sum(tf.one_hot(self.a_ph, depth=act_dim) * logp_all, axis=1, name="logp")
                 self.logp_pi = tf.reduce_sum(tf.one_hot(self.pi, depth=act_dim) * logp_all, axis=1, name="logp_pi")
-            else: #gaussian policy
+            else: #Gaussian policy
                 mu = y_ph #technicality
                 log_std = tf.compat.v1.get_variable(name='log_std', initializer=-0.5*np.ones(mu.get_shape()[-1], dtype=np.float32)) #
                 std = tf.exp(log_std)
                 self.pi = tf.identity(mu + tf.random.normal(tf.shape(mu)) * std, name="pi")
                 self.a_ph = tf.placeholder(dtype=tf.float32, shape=self.pi.get_shape(), name="action")
-                self.logp = gaussian_likelihood(self.a_ph, mu, log_std, name="logp")
-                self.logp_pi = gaussian_likelihood(self.pi, mu, log_std, name="logp_pi")
+                self.logp = utils.gaussian_likelihood(self.a_ph, mu, log_std, name="logp")
+                self.logp_pi = utils.gaussian_likelihood(self.pi, mu, log_std, name="logp_pi")
         
         with tf.compat.v1.variable_scope("v"):
             self.v = tf.squeeze(v_ph, axis=1, name="value")
         
-
         self.all_inputs_phs = [self.x_ph, self.a_ph, self.adv_ph, self.ret_ph, self.logp_old_ph]
         self.action_ops = [self.pi, self.v, self.logp_pi]
 
         #This helps work with multidimensional obs
         self.obs_reshape = self.x_ph.get_shape().as_list()
         self.obs_reshape[0] = 1
-
 
         obs_dim = self.x_ph.get_shape()[1:]
         action_dim = self.a_ph.get_shape()[1:]
@@ -175,29 +167,32 @@ class PPO():
         self.sess.run(tf.compat.v1.global_variables_initializer())
         self.sess.run(sync_all_params())
         self.saver = tf.compat.v1.train.Saver()
-        # if new:
-        #     self.save()
-        # else:
-        #     self.restore()
         
         self.writer = tf.compat.v1.summary.FileWriter(save_path, self.sess.graph)
     
     def save(self):
+        """
+        Saves the model
+        """
         self.saver.save(self.sess, self.save_name)
-        # print("Model Saved")
+        
     
     def restore(self):
+        """
+        Restores the model
+        """
         self.saver.restore(self.sess, self.save_name)
-        # print("Model Restored")
 
-    #This handles batching
-    #set batch_size in hps to None to use all full buffer
     def update(self):
+        """
+        Performs a PPO update on the network
+        Call only if the PPOBuffer is full
+        Handles batching if it is indicated by the HPS
+        """
         memories = self.buf.get()
         start_idx = 0
         end_idx = self.hps.batch_size
 
-        # pi_l_old, v_l_old, end = self.sess.run([self.pi_loss, self.v_loss, self.approx_ent], feed_dict=inputs) #Logging stuff
         #Training
         for i in range(self.hps.train_pi_iters):
             if self.hps.batch_size is None:
@@ -214,20 +209,24 @@ class PPO():
             _, kl = self.sess.run([self.train_pi_op, self.approx_kl], feed_dict=inputs)
             kl = mpi_avg(kl)
             if kl > 1.5 * self.hps.target_kl:
-                #TODO find a better way to print this
-                # print("early stopping at step {} due to reaching max KL".format(i))
+                # print("early stopping at step {} due to reaching max KL".format(i)) #debug
                 break
             
         for _ in range(self.hps.train_v_iters):
             self.sess.run(self.train_v_op, feed_dict=inputs)
         
-        #Log if desired
 
     def get_action_ops(self, obs):
+        """
+        Returns all action ops
+        """
         a, v_t, logp_t = self.sess.run(self.action_ops, feed_dict={self.x_ph: obs.reshape(self.obs_reshape)})
         return a, v_t, logp_t
 
     def get_v(self, obs):
+        """
+        Returns output of the value network
+        """
         return self.sess.run(self.v, feed_dict={self.x_ph: obs.reshape(self.obs_reshape)})
 
         

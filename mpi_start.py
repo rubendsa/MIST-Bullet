@@ -10,7 +10,7 @@ env.update(
 )
 n = 4 #threads
 args = ["mpirun", "-np", str(n)]
-#bind to core?
+
 args += [sys.executable, "mpi_runner.py"]
 
 subprocess.check_call(args, env=env)

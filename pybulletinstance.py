@@ -2,6 +2,7 @@ import pybullet
 import pybullet_utils.bullet_client as bc
 import pybullet_data
 import numpy as np 
+import utils
 
 class PyBulletInstance():
 
@@ -17,7 +18,6 @@ class PyBulletInstance():
         self.hingeIDs = [0, 1, 2]
         self.ctrlSurfIDs = [9, 7, 5, 3]
         self.propIDs = [10, 8, 6, 4]
-        self.currently_used = False #utility to allow odd number of batches relative to total number of envs
 
     def setHingePosition(self, hingePosition):
         hingeForce = 100
@@ -36,17 +36,42 @@ class PyBulletInstance():
                             controlMode=pybullet.POSITION_CONTROL,
                             targetPosition=hingePosition,
                             force=hingeForce)
+    
+    #######################
+    #                     #
+    # GUI Debug Functions #
+    #                     #
+    #######################
+
     def get_viz_delay(self):
+        """
+        Reads in the debug parameter for vizualation delay
+        TODO it may be useful to generalize this function if more debug parameters become necessary
+        """
         return pybullet.readUserDebugParameter(self.viz_delay_id)
 
     def set_waypoint_text(self, str, point):
+        """
+        Puts text at a given point, ideally for waypoints
+        """
         return pybullet.addUserDebugText(str, point, lifeTime=0)
     
     def remove_waypoint_text(self, val):
+        """
+        Removes given text id from GUI
+        """
         pybullet.removeUserDebugItem(val)
-    ###################     Helper functions   #####################
-    # Action Vector
+    
+    ####################
+    #                  #
+    # Helper Functions #
+    #                  #
+    ####################
+
     def applyAction(self, actionVector):
+        """
+        Applies an action vector (in Newtons) and applies it to the associated links
+        """
         w0, w1, w2, w3, c0, c1, c2, c3, h0, h1, h2 = actionVector
 
         Kf = 1 # TODO: Put this in an object. 
@@ -95,8 +120,10 @@ class PyBulletInstance():
         self.client.setJointMotorControl2(self.robotID, self.hingeIDs[1], pybullet.POSITION_CONTROL, targetPosition=h1, force=1000)
         self.client.setJointMotorControl2(self.robotID, self.hingeIDs[2], pybullet.POSITION_CONTROL, targetPosition=h2, force=1000)
 
-    # State Vector
     def getUAVState(self):
+        """
+        Obtains the UAV state in separate vectors
+        """
         a, b, c, d, e, f, g, h = self.client.getLinkState(self.robotID, 0, 1)
         # position = e # x,y,z
         position = self.computeCenterOfMass()
@@ -105,12 +132,18 @@ class PyBulletInstance():
         angular_velocity = h
         return position, orientation, velocity, angular_velocity 
     
-    #1D state vector
     def getState(self):
+        """
+        Conglomerates state into a 1D vector for convenience
+        """
         p, o, v, a_v = self.getUAVState()
         return np.array([*p, *o, *v, *a_v])
 
     def computeCenterOfMass(self):
+        """
+        Calculates the center of mass of the frame
+        UAV position refers to this point
+        """
         allLinkPositions=[]    #TODO: Refactor this.
 
 
@@ -125,39 +158,27 @@ class PyBulletInstance():
         return centerOfMass
 
     def step(self):
+        """
+        Steps simulation forward once
+        """
         self.client.stepSimulation()
-        # time.sleep(0.001)
 
     def set_to_pos_and_q(self, pos, q):
+        """
+        Sets the frame so a given position and orientation
+        """
         self.client.resetBasePositionAndOrientation(self.robotID, pos, q)
 
     def reset(self):
+        """
+        Resets to origin with no perturbation
+        """
         self.set_to_pos_and_q([0, 0, 0], [0, 0, 0, 1])
-    
-    #TODO put all static methods into util clas
-    @staticmethod
-    def random_three_vector():
+
+    def reset_random(self): 
         """
-        Generates a random 3D unit vector (direction) with a uniform spherical distribution
-        Algo from http://stackoverflow.com/questions/5408276/python-uniform-spherical-distribution
-        :return:
+        Resets to random location around origin with random orientation
         """
-        phi = np.random.uniform(0,np.pi*2)
-        costheta = np.random.uniform(-1,1)
-
-        theta = np.arccos(costheta)
-        x = np.sin(theta) * np.cos(phi)
-        y = np.sin(theta) * np.sin(phi)
-        z = np.cos(theta)
-        return (x,y,z)
-
-    @staticmethod 
-    def random_quaternion():
-        return pybullet.getQuaternionFromEuler(PyBulletInstance.random_three_vector())
-
-    #resets to a random start position
-    #and orientation
-    def reset_random(self):
         pos = list(np.random.rand(3))
-        q = PyBulletInstance.random_quaternion()
+        q = utils.random_quaternion()
         self.set_to_pos_and_q(pos, q)
