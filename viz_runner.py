@@ -6,7 +6,6 @@ import time
 from ppo import PPO 
 from networks import general_mlp 
 from hp import DEFAULT_HPSTRUCT, DEBUG_HPSTRUCT, QUADROTOR_HPSTRUCT
-from mpi import proc_id, num_procs
 from pybulletinstance import PyBulletInstance
 
 #todo check if slicing is correct
@@ -19,12 +18,20 @@ from pybulletinstance import PyBulletInstance
 #this just penalizes position deviance from (0, 0, 0)
 #being with 5 is rewarded positively
 def calc_reward(state):
-    return (-1 * np.linalg.norm(state[0:3])) + 5
+    position_reward = (-1 * np.linalg.norm(state[0:3])) + 5
+    angular_vel_reward = (-1 * np.linalg.norm(state[10:]))
+    return position_reward 
 
+def clip(val, clip):
+    if val < -clip:
+        val = -clip
+    elif val > clip:
+        val = clip 
+    return val
 #modifies action within parameters
 def action_mod(a):
     a *= 50 #action scale
-    #maybe add clipping?
+    a = [clip(x, 17) for x in a]
     a = np.concatenate((a, [0, 0, 0, 0, 1.57, 1.57, 1.57]))
     return a
 
@@ -36,25 +43,21 @@ hps = QUADROTOR_HPSTRUCT()
 
 ppo = PPO(x_ph, y_ph, v_ph, discrete=False, hp_struct=hps, name="QuadrotorTest")
 ppo.restore()
-action_scale = 50
 # env = gym.make("LunarLanderContinuous-v2")
 env = PyBulletInstance(GUI=True)
-env.reset()
+env.reset_random() #change to .reset() to start at origin
 o = env.getState()
 r = 0
 d = False 
-ep_ret = 0 
-ep_len = 0
-# env = gym.wrappers.Monitor(env, "./vids", video_callable=lambda episode_id: True,force=True)
-print(o)
 
-for t in range(10000):
+
+for t in range(100000):
     a, _, _ = ppo.get_action_ops(o)
     # print(a)
     action_to_apply = action_mod(a[0])
     env.applyAction(action_to_apply) 
     env.step()
-    time.sleep(0.01)
+    time.sleep(env.get_viz_delay())
     o = env.getState()
     r = calc_reward(o)
     # print(r)
@@ -63,9 +66,9 @@ for t in range(10000):
 
     # print(r)
 
-    if d:
+    if d or t % 2000 == 0:
         print(a[0])
         d = False
-        env.reset()
+        env.reset_random()
         o = env.getState()
 

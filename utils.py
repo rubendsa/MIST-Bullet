@@ -1,4 +1,10 @@
 import math
+import numpy as np
+
+def quadrotor_reward(state):
+    position_reward = (-1 * np.linalg.norm(state[0:3])) + 5
+    angular_vel_reward = (-1 * np.linalg.norm(state[10:]))
+    return position_reward
 
 class ProgressBar():
     def __init__(self, steps = 20, length=20, end_with_newline=False):

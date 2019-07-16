@@ -20,12 +20,20 @@ from pybulletinstance import PyBulletInstance
 #this just penalizes position deviance from (0, 0, 0)
 #being with 5 is rewarded positively
 def calc_reward(state):
-    return (-1 * np.linalg.norm(state[0:3])) + 5
+    position_reward = (-1 * np.linalg.norm(state[0:3])) + 5
+    angular_vel_reward = (-1 * np.linalg.norm(state[10:]))
+    return position_reward 
 
+def clip(val, clip):
+    if val < -clip:
+        val = -clip
+    elif val > clip:
+        val = clip 
+    return val
 #modifies action within parameters
 def action_mod(a):
     a *= 50 #action scale
-    #maybe add clipping?
+    a = [clip(x, 17) for x in a]
     a = np.concatenate((a, [0, 0, 0, 0, 1.57, 1.57, 1.57]))
     return a
 
@@ -40,7 +48,7 @@ ppo = PPO(x_ph, y_ph, v_ph, discrete=False, hp_struct=hps, name="QuadrotorTest")
 ppo.restore()
 
 env = PyBulletInstance(GUI=False)
-env.reset()
+env.reset_random()
 o = env.getState()
 r = 0
 d = False 
@@ -73,15 +81,21 @@ for epoch in range(ppo.hps.epochs):
             last_val = r if d else ppo.get_v(o)
             ppo.buf.finish_path(last_val)
             # print(a[0])
-            env.reset()
+            env.reset_random()
             o = env.getState()
             r = 0
             d = False 
             ep_ret = 0 
             ep_len = 0
 
-    if epoch % ppo.hps.save_freq == 0:
-        ppo.save() 
+    
 
     print("Done with epoch {} in proc #{}".format(epoch, proc_id()))
     ppo.update()
+
+    #only need to save in 1 process
+    #ideally this would occur in the first process to hit this point
+    #but idk how to sync it currently
+    if epoch % ppo.hps.save_freq == 0 and proc_id() == 0:
+        ppo.save() 
+        print("Saved!")

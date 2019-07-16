@@ -8,6 +8,7 @@ class PyBulletInstance():
     def __init__(self, GUI=False):
         if(GUI):
             self.client = bc.BulletClient(connection_mode=pybullet.GUI)
+            self.viz_delay_id = pybullet.addUserDebugParameter("viz_delay", 0, 0.02, 0.005)
         else:
             self.client = bc.BulletClient(connection_mode=pybullet.DIRECT)
         self.client.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -35,7 +36,14 @@ class PyBulletInstance():
                             controlMode=pybullet.POSITION_CONTROL,
                             targetPosition=hingePosition,
                             force=hingeForce)
+    def get_viz_delay(self):
+        return pybullet.readUserDebugParameter(self.viz_delay_id)
 
+    def set_waypoint_text(self, str, point):
+        return pybullet.addUserDebugText(str, point, lifeTime=0)
+    
+    def remove_waypoint_text(self, val):
+        pybullet.removeUserDebugItem(val)
     ###################     Helper functions   #####################
     # Action Vector
     def applyAction(self, actionVector):
@@ -125,3 +133,31 @@ class PyBulletInstance():
 
     def reset(self):
         self.set_to_pos_and_q([0, 0, 0], [0, 0, 0, 1])
+    
+    #TODO put all static methods into util clas
+    @staticmethod
+    def random_three_vector():
+        """
+        Generates a random 3D unit vector (direction) with a uniform spherical distribution
+        Algo from http://stackoverflow.com/questions/5408276/python-uniform-spherical-distribution
+        :return:
+        """
+        phi = np.random.uniform(0,np.pi*2)
+        costheta = np.random.uniform(-1,1)
+
+        theta = np.arccos(costheta)
+        x = np.sin(theta) * np.cos(phi)
+        y = np.sin(theta) * np.sin(phi)
+        z = np.cos(theta)
+        return (x,y,z)
+
+    @staticmethod 
+    def random_quaternion():
+        return pybullet.getQuaternionFromEuler(PyBulletInstance.random_three_vector())
+
+    #resets to a random start position
+    #and orientation
+    def reset_random(self):
+        pos = list(np.random.rand(3))
+        q = PyBulletInstance.random_quaternion()
+        self.set_to_pos_and_q(pos, q)
