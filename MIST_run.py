@@ -24,7 +24,7 @@ import helperFunctions as hf
 
 # Initalization Code
 physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
-p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0) # Removes the GUI text boxes
+# p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0) # Removes the GUI text boxes
 # physicsClient = p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
 p.setGravity(0,0,-9.81)
@@ -45,10 +45,10 @@ propIds = [10, 8, 6, 4]
 
 if __name__ == "__main__":
     simTime = 5000
-    simDelay = .0001
+    simDelay = .01
     p.resetDebugVisualizerCamera(20, 70, -20, [0,0,0]) # Camera position (distance, yaw, pitch, focuspoint)
     # p.resetDebugVisualizerCamera(20, 70, -20, computeCenterOfMass()) # Camera position (distance, yaw, pitch, focuspoint)
-    p.resetBasePositionAndOrientation(robotId, [10,0,20], p.getQuaternionFromEuler((3.1415/180)*np.array([0,-80,90]))) # Staring position of robot
+    p.resetBasePositionAndOrientation(robotId, [-40,-20,30], p.getQuaternionFromEuler((3.1415/180)*np.array([0,0,0]))) # Staring position of robot
     p.resetBaseVelocity(robotId, [0,0,0], [0,0,0])
 
     # p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
@@ -63,10 +63,11 @@ if __name__ == "__main__":
 
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
-        # time.sleep(simDelay)
+        time.sleep(simDelay)
 
         # fm.applyAction([0, 0, 0, 0, .1, .1, .1, .1, 1.57, 1.57, 1.57], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
-        fm.applyAction([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
+        # fm.applyAction([0, 0, 0, 0, .1, .1, .1, .1, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
+        # fm.applyAction([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
 
 
         ##### Testing attitude and position controller:
@@ -77,28 +78,29 @@ if __name__ == "__main__":
         des_angular_velocityW = [0,0,0]
         
         step = i
-        if i>100:
-            des_positionW = [20,0,10]
+        if i>1:
+            des_positionW = [10,0,10]
             des_yawW = 0
-            hingeAngle = 0
-            frameState = 0
+            hingeAngle = 1.57
+            frameState = "quadrotor"
             
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
-            w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, hingeAngle, frameState, ctrlMode = 0) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "position") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
             w1, w2, w3, w0 = w
-            e1, e2, e3, e0 = e
+            e1, e2, e3, e0 = [0,0,0,0]
 
             
-            if step in range(200, 5000):
-                hingeAngle = 0
-                frameState = 0
+            if step in range(200, 500):
+                hingeAngle = 1.57
+                frameState = "quadrotor"
                 des_yawW = 0
                 des_positionW = [20,0,20]
-                des_orientationW = p.getQuaternionFromEuler([1.57,-1.57,1.57]) # [roll, pitch, yaw]
+                # des_orientationW = p.getQuaternionFromEuler([1.57,-1.57,1.57]) # [roll, pitch, yaw]
+                des_orientationW = p.getQuaternionFromEuler([0,0,0]) # [roll, pitch, yaw]
                 robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
-                w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, hingeAngle, frameState, ctrlMode = 0) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+                w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "position") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
                 w1, w2, w3, w0 = w
-                e1, e2, e3, e0 = e
+                e1, e2, e3, e0 = [0,0,0,0]
             # if step in range(500, 2000):
             #     hingeAngle = 1.57
             #     frameState = 1
@@ -121,7 +123,20 @@ if __name__ == "__main__":
             #     robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
             #     w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, hingeAngle, frameState, ctrlMode = 0) # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
             #     w1, w2, w3, w0 = w
-            #     e1, e2, e3, e0 = [0,0,0,0]
+            #     e1, e2, e3, e0 = e
+
+            if step in range(500, 5000):
+                hingeAngle = 0
+                frameState = "fixedwing"
+                des_yawW = 0
+                # des_orientationW = p.getQuaternionFromEuler([0,0,3.14])
+                des_orientationW = p.getQuaternionFromEuler([0,.9,0]) # [roll, pitch, yaw]
+                des_positionW = [20,10,10]
+                # des_positionW = [0,0,10]
+                robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
+                w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "attitude") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+                w1, w2, w3, w0 = w
+                e1, e2, e3, e0 = e
 
 
 
@@ -184,16 +199,8 @@ if __name__ == "__main__":
             # p.applyExternalForce(robotId, 1, [0,1,0], [0,0,0], 2) #Apply m0 force[N] on link0, w.r.t. local frame
             # print("linkframe", p.WORLD_FRAME)
 
-            # wingAero()
-
-            # computeCenterOfMass()
-
-            # visualizeCenterOfMass()
-            # visualizeLinkFrame(0)
-            Kf = 2.02E-7
-            Km = 2.02E-8
-            # Kf = 1
-            # visualizeThrottle(w0*Kf, w1*Kf, w2*Kf, w3*Kf)
+           
+            
             fm.applyAction([w0, w1, w2, w3, e0, e1, e2, e3, hingeAngle, hingeAngle, hingeAngle], robotId, hingeIds, ctrlSurfIds, propIds)
 
         # hf.visualizeLinkFrame(-1)

@@ -15,7 +15,7 @@ from numba import jit
 
 # Controllers for the UAV
 # @jit(nopython=True)
-def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, hingeAngle, frameState, ctrlMode):
+def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode):
 
     # Set Gains and Parameters TODO: Move this out
     # K_position = np.eye(3) * np.array([[30, 30, 100]]) # gain for x, y, z components of error vector
@@ -87,10 +87,14 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, hingeAngle, frameS
     des_F = -K_position @ error_position.T - K_velocity @ error_velocity.T + np.array([[0,0, mass * gravity]]).T #
     # Compute u1 -> Force in world frame projected into the body z-axis
     zB = rotBtoW @ np.array([[0,0,1]]).T
+    
     # print("zB", zB)
     # print("des_F", des_F)
 
     u1 = des_F.T @ zB
+    if ctrlMode == "attitude":
+        xB = rotBtoW @ np.array([[1,0,0]]).T
+        u1 = des_F.T @ xB
 
     # RUN ATTITUDE AND POSITON CONTROLLER: 
     des_zB = (des_F / LA.norm(des_F)).T
@@ -99,7 +103,7 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, hingeAngle, frameS
     des_xB = np.cross(des_yB, des_zB)
     des_R = np.concatenate((des_xB, des_yB, des_zB), axis = 0).T
 
-    if ctrlMode == 0:
+    if ctrlMode == "attitude":
         # RUN ONLY ATTITUDE CONTROLLER: 
         deslistBtoW = p.getMatrixFromQuaternion(des_orientationW)
         desrotBtoW = np.array([[deslistBtoW[0], deslistBtoW[1], deslistBtoW[2]],
@@ -164,7 +168,7 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, hingeAngle, frameS
     e = 0,0,0,0
 
     # if in a tailsitter state, recompute motor velocity and elevon angles as per geoTailSitter and geoTailSitterCtrlSurf geometry.
-    if frameState == 0:
+    if frameState == "fixedwing":
         tempStep = step
         w2 = geoTailSitter @ u
         w2 = np.clip(w2,0, w2Limit)
@@ -172,7 +176,7 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, hingeAngle, frameS
         e = geoTailSitterCtrlSurf @ u
         e = np.clip(e, -.5, .5)
 
-    if frameState == 1:
+    if frameState == "quadrotor":
         w2 = LA.inv(geo) @ u
         w2 = np.clip(w2,0, w2Limit)
         w = w2
