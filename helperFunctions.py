@@ -5,6 +5,7 @@ import pybullet_data
 import numpy as np
 from numpy import loadtxt
 import helperFunctions as hf
+import math
 
 
 # Various helper functions for physics calculations
@@ -111,7 +112,7 @@ def visualizeZoom(robotId, i, startIter, duration, startZoom, endZoom):
     if i>(startIter+duration):
         zoom = startZoom + rateZoom * (1)    
     else:
-        zoom = startZoom + rateZoom * ((i-startIter)/duration)
+        zoom = startZoom + rateZoom * math.sin(1.57*(i-startIter)/duration)
    
     p.resetDebugVisualizerCamera(zoom, -70, -30, hf.computeCenterOfMass(robotId)) # Camera position (distance, yaw, pitch, focuspoint)
 

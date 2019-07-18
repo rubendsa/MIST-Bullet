@@ -130,7 +130,7 @@ if __name__ == "__main__":
                 frameState = "quadrotor"
                 des_yawW = 0
                 # des_orientationW = p.getQuaternionFromEuler([0,0,3.14])
-                des_orientationW = p.getQuaternionFromEuler([0,0,0]) # [roll, pitch, yaw]
+                des_orientationW = p.getQuaternionFromEuler([0,0,3.14]) # [roll, pitch, yaw]
                 des_positionW = [0,0,10]
                 # des_positionW = [0,0,10]
                 robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
@@ -215,10 +215,10 @@ if __name__ == "__main__":
             hf.visualizeZoom(robotId, i, 0, 500, 10, 2)
         
         if i in range(1000, 1900):
-            hf.visualizeZoom(robotId, i, 1000, 500, 2, 10)
+            hf.visualizeZoom(robotId, i, 1000, 500, 2, 5)
         
         if i in range(1900, 3000):
-            hf.visualizeZoom(robotId, i, 1900, 200, 10, 5)
+            hf.visualizeZoom(robotId, i, 1900, 200, 5, 5)
 
 
 
