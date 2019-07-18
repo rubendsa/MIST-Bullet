@@ -92,7 +92,7 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
     # print("des_F", des_F)
 
     u1 = des_F.T @ zB
-    if ctrlMode == "attitude":
+    if ctrlMode == "attitude" and frameState == "fixedwing":
         xB = rotBtoW @ np.array([[1,0,0]]).T
         u1 = des_F.T @ xB
 

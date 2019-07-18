@@ -4,6 +4,7 @@ import pybullet_data
 
 import numpy as np
 from numpy import loadtxt
+import helperFunctions as hf
 
 
 # Various helper functions for physics calculations
@@ -102,4 +103,16 @@ def visualizeLinkFrame(link):
 
 def visualizeCenterOfMass():
     p.addUserDebugLine([0,0,0], computeCenterOfMass(), [1.0,1.0,1.0], lifeTime = .05)
+
+
+def visualizeZoom(robotId, i, startIter, duration, startZoom, endZoom):
+    rateZoom = (endZoom-startZoom)
+    
+    if i>(startIter+duration):
+        zoom = startZoom + rateZoom * (1)    
+    else:
+        zoom = startZoom + rateZoom * ((i-startIter)/duration)
+   
+    p.resetDebugVisualizerCamera(zoom, -70, -30, hf.computeCenterOfMass(robotId)) # Camera position (distance, yaw, pitch, focuspoint)
+
 
