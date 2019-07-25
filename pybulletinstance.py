@@ -7,7 +7,8 @@ import utils
 class PyBulletInstance():
 
     def __init__(self, GUI=False):
-        if(GUI):
+        self.GUI = GUI
+        if(self.GUI):
             self.client = bc.BulletClient(connection_mode=pybullet.GUI)
             self.viz_delay_id = pybullet.addUserDebugParameter("viz_delay", 0, 0.02, 0.005)
         else:
@@ -18,6 +19,7 @@ class PyBulletInstance():
         self.hingeIDs = [0, 1, 2]
         self.ctrlSurfIDs = [9, 7, 5, 3]
         self.propIDs = [10, 8, 6, 4]
+        self.oneTickDebugItems = [] #one-tick debug items are computationally slow
 
     def setHingePosition(self, hingePosition):
         hingeForce = 100
@@ -43,22 +45,34 @@ class PyBulletInstance():
     #                     #
     #######################
 
-    def get_viz_delay(self):
+    def getVizDelay(self):
         """
         Reads in the debug parameter for vizualation delay
         TODO it may be useful to generalize this function if more debug parameters become necessary
         """
         return pybullet.readUserDebugParameter(self.viz_delay_id)
 
-    def set_waypoint_text(self, str, point):
+    def setWayPointText(self, str, point):
         """
         Puts text at a given point, ideally for waypoints
         """
-        return pybullet.addUserDebugText(str, point, lifeTime=0)
+        debugID = pybullet.addUserDebugText(str, point, lifeTime=0)
+        return debugID
     
-    def remove_waypoint_text(self, val):
+    def addDebugLine(self, start, end, color=[1,0,1], width=3, oneTick=True):
         """
-        Removes given text id from GUI
+        Draws a line between given points, by default purple
+        Remove line by specifying lifeTime or by passing returned ID to removeDebugItem
+        oneTick specifies whether to add to the one tick clear queue
+        """
+        debugID = pybullet.addUserDebugLine(start, end, color, width, lifeTime=0)
+        if oneTick:
+            self.oneTickDebugItems.append(debugID)
+        return debugID
+        
+    def removeDebugItem(self, val):
+        """
+        Removes given debug from GUI give ID
         """
         pybullet.removeUserDebugItem(val)
     
@@ -120,6 +134,12 @@ class PyBulletInstance():
         self.client.setJointMotorControl2(self.robotID, self.hingeIDs[1], pybullet.POSITION_CONTROL, targetPosition=h1, force=1000)
         self.client.setJointMotorControl2(self.robotID, self.hingeIDs[2], pybullet.POSITION_CONTROL, targetPosition=h2, force=1000)
 
+    def applySingleLinkForce(self, force):
+        """
+        Applies a force (in Newtons) to a single link
+        """
+        self.client.applyExternalForce(self.robotID, 2, force, [0, 0, 0], 1)
+        
     def getUAVState(self):
         """
         Obtains the UAV state in separate vectors
@@ -161,6 +181,10 @@ class PyBulletInstance():
         """
         Steps simulation forward once
         """
+        if self.GUI:
+            for debugID in self.oneTickDebugItems:
+                pybullet.removeUserDebugItem(debugID)
+            self.oneTickDebugItems = []
         self.client.stepSimulation()
 
     def set_to_pos_and_q(self, pos, q):
@@ -182,3 +206,7 @@ class PyBulletInstance():
         pos = list(np.random.rand(3))
         q = utils.random_quaternion()
         self.set_to_pos_and_q(pos, q)
+    
+    def apply_random_force(self, magnitude):
+        f = utils.random_force(magnitude)
+        self.applySingleLinkForce(f)

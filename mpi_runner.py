@@ -15,7 +15,7 @@ y_ph, v_ph = general_mlp(x_ph, output_dim=4)
 hps = QUADROTOR_HPSTRUCT()
 
 ppo = PPO(x_ph, y_ph, v_ph, discrete=False, hp_struct=hps, name="QuadrotorTest")
-# ppo.restore()
+ppo.restore()
 
 env = PyBulletInstance(GUI=False)
 env.reset_random()
@@ -49,6 +49,7 @@ for epoch in range(ppo.hps.epochs):
             last_val = r if d else ppo.get_v(o)
             ppo.buf.finish_path(last_val)
             env.reset_random()
+            env.apply_random_force(10000)
             o = env.getState()
             r = 0
             d = False 

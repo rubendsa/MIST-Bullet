@@ -12,17 +12,40 @@ import pybullet
 
 def quadrotor_reward(state):
     """
-    Reward based off of position and angular velocity
+    Reward based on staying still on target
     """
     position_reward = (-1 * np.linalg.norm(state[0:3])) + 5
+    orientation_reward = (-1 * np.linalg.norm(pybullet.getEulerFromQuaternion(state[3:7])))
+    velocity_reward = (-1 * np.linalg.norm(state[7:10]))
     angular_vel_reward = (-1 * np.linalg.norm(state[10:]))
-    return position_reward
+    return position_reward + orientation_reward + velocity_reward + angular_vel_reward
+
+def fixed_wing_reward(state, setpoint, debug=False):
+    """
+    Reward based on maintaining a straight line velocity towards target
+    Distance from target isn't explicity penalized, having a positive velocity towards target is reinforced
+    TODO not spaghetti
+    """
+    position = state[0:3]
+    velocity = state[7:10]
+    velocity_magnitude = np.linalg.norm(velocity)
+    velocity_U = velocity / velocity_magnitude
+    offset = setpoint - position #this is the direction the velocity *should* be in
+    offset_U = offset / np.linalg.norm(offset)
+    error = velocity_U - offset_U
+    reward = -1 * np.linalg.norm(error)
+    #TODO decide scale / offset ????
+    if debug:
+        return position, velocity_U, offset_U 
+    return reward
 
 def quadrotor_action_mod(a):
     """
     Clips the action and sets joints to quadrotor-only
     """
     #previously had action scale, TODO decide if removal is bad
+    # a *= 10 #doesn't work without an action scale, oddly enough
+    a *= 50
     a = [clip(x, 17) for x in a]
     a = np.concatenate((a, [0, 0, 0, 0, 1.57, 1.57, 1.57]))
     return a
@@ -66,6 +89,8 @@ def random_three_vector():
     """
     Generates a random 3D unit vector (direction) with a uniform spherical distribution
     Algo from http://stackoverflow.com/questions/5408276/python-uniform-spherical-distribution
+    This isn't the function we need
+    TODO remove
     """
     phi = np.random.uniform(0,np.pi*2)
     costheta = np.random.uniform(-1,1)
@@ -76,11 +101,31 @@ def random_three_vector():
     z = np.cos(theta)
     return (x,y,z)
 
+def random_rpy():
+    """
+    Generates random values for roll, pitch, and yaw between 0 and 2pi
+    """
+    r = np.random.uniform(0, np.pi*2)
+    p = np.random.uniform(0, np.pi*2)
+    y = np.random.uniform(0, np.pi*2)
+
+    return (r, p, y)
+
 def random_quaternion():
     """
-    Turns a random_three_vector into quaternion form
+    Turns a random rpy into quaternion form
     """
-    return pybullet.getQuaternionFromEuler(random_three_vector())
+    return pybullet.getQuaternionFromEuler(random_rpy())
+
+def random_force(magnitude):
+    """
+    Generates a random force between [-magnitude, magnitude] for x, y, and z
+    """
+    x = np.random.uniform(-magnitude, magnitude)
+    y = np.random.uniform(-magnitude, magnitude)
+    z = np.random.uniform(-magnitude, magnitude)
+    
+    return (x, y, z)
 
 ##################
 #                #
