@@ -46,7 +46,7 @@ propIds = [10, 8, 6, 4]
 if __name__ == "__main__":
     simTime = 10000
     simDelay = .01
-    p.setTimeStep(.1)
+    p.setTimeStep(.001)
     p.resetBasePositionAndOrientation(robotId, [-20,0,40], p.getQuaternionFromEuler((3.1415/180)*np.array([0,0,0]))) # Staring position of robot
     p.resetBaseVelocity(robotId, [0,0,0], [0,0,0])
 
@@ -77,7 +77,7 @@ if __name__ == "__main__":
         
         step = i
 
-        if step in range(0, 30):
+        if step in range(0, 5000):
             hingeAngle = 0
             frameState = "fixedwing"
                 
@@ -108,7 +108,7 @@ if __name__ == "__main__":
         #     w1, w2, w3, w0 = w
         #     e1, e2, e3, e0 = e
 
-        if step in range(30, 50):
+        if step in range(5000, 10000):
             hingeAngle = 1.57
             frameState = "quadrotor"
             
