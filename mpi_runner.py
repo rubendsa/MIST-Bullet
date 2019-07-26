@@ -15,7 +15,9 @@ y_ph, v_ph = general_mlp(x_ph, output_dim=4)
 hps = QUADROTOR_HPSTRUCT()
 
 ppo = PPO(x_ph, y_ph, v_ph, discrete=False, hp_struct=hps, name="QuadrotorTest")
-ppo.restore()
+# ppo.restore()
+
+logger = utils.Logger() #TODO move to only proc 0
 
 env = PyBulletInstance(GUI=False)
 env.reset_random()
@@ -26,8 +28,11 @@ d = False
 ep_ret = 0 
 ep_len = 0
 
+
 print("Starting execution in process {}".format(proc_id()))
 for epoch in range(ppo.hps.epochs):
+    logger.add_named_value("Epoch", epoch)
+    avg_reward = 0
     for t in range(ppo.local_steps_per_epoch):
         a, v_t, logp_t = ppo.get_action_ops(o)
 
@@ -41,6 +46,8 @@ for epoch in range(ppo.hps.epochs):
         ep_ret += r
         ep_len += 1
 
+        avg_reward += r
+
         if r < -20:
             d = True 
 
@@ -49,17 +56,21 @@ for epoch in range(ppo.hps.epochs):
             last_val = r if d else ppo.get_v(o)
             ppo.buf.finish_path(last_val)
             env.reset_random()
-            env.apply_random_force(10000)
+            # env.apply_random_force(10000)
             o = env.getState()
             r = 0
             d = False 
             ep_ret = 0 
             ep_len = 0
 
-    
+    logger.add_named_value("Average Reward", avg_reward / ppo.local_steps_per_epoch)
 
     print("Done with epoch {} in proc #{}".format(epoch, proc_id()))
-    ppo.update()
+    ppo.update(logger)
+
+    #Log in only 1 process
+    if proc_id() == 0:
+        logger.output()
 
     """
     Saving only needs to occur in 1 process

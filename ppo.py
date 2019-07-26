@@ -183,7 +183,7 @@ class PPO():
         """
         self.saver.restore(self.sess, self.save_name)
 
-    def update(self):
+    def update(self, logger=None):
         """
         Performs a PPO update on the network
         Call only if the PPOBuffer is full
@@ -209,11 +209,19 @@ class PPO():
             _, kl = self.sess.run([self.train_pi_op, self.approx_kl], feed_dict=inputs)
             kl = mpi_avg(kl)
             if kl > 1.5 * self.hps.target_kl:
-                # print("early stopping at step {} due to reaching max KL".format(i)) #debug
+                print("early stopping at step {} due to reaching max KL".format(i)) #debug
                 break
             
         for _ in range(self.hps.train_v_iters):
             self.sess.run(self.train_v_op, feed_dict=inputs)
+        
+        if logger is not None:
+            pi_l_new, v_l_new, kl, cf = self.sess.run([self.pi_loss, self.v_loss, self.approx_kl, self.clipfrac], feed_dict=inputs)
+            logger.add_named_value("Pi Loss", pi_l_new)
+            logger.add_named_value("Value Loss", v_l_new)
+            logger.add_named_value("KL Divergence", kl)
+            logger.add_named_value("Clip Fraction", cf)
+
         
 
     def get_action_ops(self, obs):

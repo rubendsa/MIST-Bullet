@@ -171,6 +171,43 @@ def clip(val, clip_val):
         val = clip_val 
     return val
 
+class Logger():
+    """
+    Bare-bones logger
+    Queues strings until desired print, then formats in a nice block
+    Enter strings using add_string in format ->
+    "Name: Value"
+    or enter a name and a value using add_named_value to achieve same result
+    TODO add log to file 
+    """
+    def __init__(self):
+        self.string_list = [] 
+    
+    def add_string(self, new_string):
+        self.string_list.append(new_string)
+    
+    def add_named_value(self, name, value):
+        self.string_list.append("{}: {:.4f}".format(name, value))
+    
+    def max_len(self):
+        return max(map(len, self.string_list)) 
+    
+    def output(self):
+        line_size = self.max_len() + 4
+        out = ("#" * line_size) + "\n"
+        for val in self.string_list:
+            out += "# "
+            out += val 
+            out += (" " * (line_size - 4 - len(val)))
+            out += " #\n"
+        out += ("#" * line_size)
+        print(out)
+        self.string_list = []
+
+
+    
+    
+
 class ProgressBar():
     """
     General-use progress bar the prints to CLI and updates with carriage returns
