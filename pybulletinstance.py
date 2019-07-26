@@ -20,6 +20,7 @@ class PyBulletInstance():
         self.ctrlSurfIDs = [9, 7, 5, 3]
         self.propIDs = [10, 8, 6, 4]
         self.oneTickDebugItems = [] #one-tick debug items are computationally slow
+        pybullet.setTimeStep(0.001)
 
     def setHingePosition(self, hingePosition):
         hingeForce = 100

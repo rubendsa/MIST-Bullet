@@ -15,9 +15,9 @@ def quadrotor_reward(state):
     Reward based on staying still on target
     """
     position_reward = (-1 * np.linalg.norm(state[0:3])) + 5
-    orientation_reward = (-1 * np.linalg.norm(pybullet.getEulerFromQuaternion(state[3:7])))
-    velocity_reward = (-1 * np.linalg.norm(state[7:10]))
-    angular_vel_reward = (-1 * np.linalg.norm(state[10:]))
+    orientation_reward = (-1 * np.linalg.norm(pybullet.getEulerFromQuaternion(state[3:7]))) * 0.1
+    velocity_reward = (-1 * np.linalg.norm(state[7:10])) * 0.1
+    angular_vel_reward = (-1 * np.linalg.norm(state[10:])) * 0.1
     return position_reward + orientation_reward + velocity_reward + angular_vel_reward
 
 def fixed_wing_reward(state, setpoint, debug=False):

@@ -80,7 +80,7 @@ class QUADROTOR_HPSTRUCT(DEFAULT_HPSTRUCT):
     train_v_iters = 80
     lam = 0.97
     max_ep_len = 1000
-    target_kl = 0.01 
+    target_kl = 0.02
     save_freq = 10
     batch_size = int(10e3)
 
