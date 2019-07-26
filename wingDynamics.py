@@ -16,8 +16,9 @@ def calcFreeStreamVelocity(robotId, wingId):
     if wingId == -1:
         # vA = p.getBaseVelocity(robotId)[0]
         # listMat = p.getMatrixFromQuaternion(np.array(p.getBasePositionAndOrientation(robotId)[1]))
-        vA = np.array(p.getLinkState(robotId, wingId+1, 1)[6]) # Calculate Air-relative velocity vector Va
-        listMat = p.getMatrixFromQuaternion(p.getLinkState(robotId, wingId+1, 1)[1])
+        # vA = np.array(p.getLinkState(robotId, wingId, 1)[6]) # Calculate Air-relative velocity vector Va
+        vA = np.array(p.getBaseVelocity(robotId)[0]) # Get linear velocity in cartesian world
+        listMat = p.getMatrixFromQuaternion(p.getBasePositionAndOrientation(robotId)[1])
     else:
         vA = np.array(p.getLinkState(robotId, wingId, 1)[6]) # Calculate Air-relative velocity vector Va
         listMat = p.getMatrixFromQuaternion(p.getLinkState(robotId, wingId, 1)[1])
@@ -79,22 +80,37 @@ def wingDynamics(robotId, wingId):
     cL, cD, cM = simpleAero(robotId, wingId)
 
     FL = 1 * cL * (1/2) * sArea * rho * (vNorm**2)
-    # FL = -40
-    FD = .01 * cD * (1/2) * sArea * rho * (vNorm**2)
+    FD = 1 * cD * (1/2) * sArea * rho * (vNorm**2)
     M =  .01 * cM * (1/2) * sArea * rho * (vNorm**2)
-    # M = vNorm * 1/alphar
+    # Body-frame lift and drag forces:
+    # FxBody = -FD * math.cos(alphar) + FL * math.sin(alphar)
+    # FzBody = -FD * math.sin(alphar) - FL * math.cos(alphar)
+    # FxBody = -FL * math.cos(alphar) + FD * math.sin(alphar)
+    # FzBody = -FL * math.sin(alphar) + FD * math.cos(alphar)
 
+    FRel = hf.rotY(alphar) @ [[-FL], [0], [-FD]]
+    FRelx = hf.rotY(alphar) @ [[-FL], [0], [0]]
+    FRelz = hf.rotY(alphar) @ [[0], [0], [-FD]]
     # print("FL:", FL, "alphar", alphar, "cL:", cL)
     
     # p.applyExternalForce(robotId, 3, [-FL, 0, 0], [0,0,0], 1)
     # p.applyExternalForce(robotId, 0, [-FL, 0, 0], [0,0,0], 1)
     # p.applyExternalForce(robotId, 1, [-FL, 0, 0], [0,0,0], 1)
     # p.applyExternalForce(robotId, 2, [-FL, 0, 0], [0,0,0], 1)
-    p.applyExternalForce(robotId, wingId, [-FL, 0, -FD], [0,0,-.02], 1)
+    # p.applyExternalForce(robotId, wingId, [-FL, 0, -FD], [0,0,-.02], 1)
+    p.applyExternalForce(robotId, wingId, FRel, [0,0,-.02], 1)
+    # p.applyExternalForce(robotId, wingId, [FxBody, 0, FzBody], [0,0,-.02], 1)
     if wingId == -1:
         p.applyExternalTorque(robotId, wingId, [0, -M, 0], 2) # # BUG: for the base_link, p.LINK_FRAME=1 is inverted with p.WORLD_FRAME=2. Hence, for LINK_FRAME, we have to use 2. https://github.com/bulletphysics/bullet3/issues/1949 
     else:
         p.applyExternalTorque(robotId, wingId, [0, -M, 0], 1)
     # Debug for wing force
-    # p.addUserDebugLine([0,0,-.02], [-FL/10, 0, -.02], [1.0,1.0,1.0], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .1)
-    print("FL", FL, "alphar", alphar, "vNorm", vNorm, "M", M)
+    # p.addUserDebugLine([0,0,-.02], [FzBody, 0, 0], [0,0,1.0], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .1)
+    # p.addUserDebugLine([0,0,-.02], [0,0,-FL * math.sin(alphar)], [1,0,0], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .1)
+    # p.addUserDebugLine([0,0,-.02], [0,0,-FD * math.cos(alphar)], [0,0,1], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .1)
+    # p.addUserDebugLine([0,0,-.02], [-FL,0,0], [1,0,0], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .1)
+    # p.addUserDebugLine([0,0,-.02], [0,0,-FD], [0,0,1], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .1)
+    # p.addUserDebugLine([0,0,-.02], [FRelx[0],0,FRelx[2]], [1,0,0], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .3)
+    # p.addUserDebugLine([0,0,-.02], [FRelz[0],0,FRelz[2]], [0,0,1], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .3)
+    # print("alphar", alphar, "vNorm", vNorm, "FRel", FRel)
+    return alphar, vNorm, FRel.T, M

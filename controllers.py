@@ -128,7 +128,7 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
     u1 = np.clip(u1, 0.0, 100.0)
-    u24 = np.clip(u24, -40.0, 40.0)
+    u24 = np.clip(u24, -10.0, 10.0)
     
     u = np.concatenate((u1, u24))
 
@@ -174,13 +174,15 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
         w2 = np.clip(w2,0, w2Limit)
         w = w2
         e = geoTailSitterCtrlSurf @ u
-        e = np.clip(e, -.5, .5)
+        eNorm = e / w2Limit
+        e = eNorm #Normalize the output because it was designed for propulsion system (omega^2, not elevon deflection)
+        # e = np.clip(e, -.5, .5)
 
     if frameState == "quadrotor":
         w2 = LA.inv(geo) @ u
-        w2 = np.clip(w2,0, w2Limit)
+        w2 = np.clip(w2, 0, w2Limit)
         w = w2
-        e = 0,0,0,0
+        e = np.array([[0],[0],[0],[0]])
 
     
     # print("w:", w)

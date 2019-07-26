@@ -9,6 +9,13 @@ import math
 
 
 # Various helper functions for physics calculations
+
+def rotY(angle):
+    mat = np.array([[math.cos(angle), 0, math.sin(angle)],
+                [0            , 1,        0       ], 
+                [-math.sin(angle), 0,math.cos(angle)]])
+    return mat
+
 def readAeroData(fileName):
     lines = loadtxt(fileName, unpack=False, skiprows=11)
     alphaRTable = lines[:,0]*3.1415/180
@@ -106,7 +113,7 @@ def visualizeCenterOfMass():
     p.addUserDebugLine([0,0,0], computeCenterOfMass(), [1.0,1.0,1.0], lifeTime = .05)
 
 
-def visualizeZoom(robotId, i, startIter, duration, startZoom, endZoom):
+def visualizeZoom(robotId, i, startIter, duration, startZoom, endZoom, yaw, pitch):
     rateZoom = (endZoom-startZoom)
     
     if i>(startIter+duration):
@@ -114,6 +121,6 @@ def visualizeZoom(robotId, i, startIter, duration, startZoom, endZoom):
     else:
         zoom = startZoom + rateZoom * math.sin(1.57*(i-startIter)/duration)
    
-    p.resetDebugVisualizerCamera(zoom, -70, -30, hf.computeCenterOfMass(robotId)) # Camera position (distance, yaw, pitch, focuspoint)
+    p.resetDebugVisualizerCamera(zoom, yaw, pitch, hf.computeCenterOfMass(robotId)) # Camera position (distance, yaw, pitch, focuspoint)
 
 
