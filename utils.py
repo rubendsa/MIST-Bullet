@@ -15,9 +15,9 @@ def quadrotor_reward(state):
     Reward based on staying still on target
     """
     position_reward = (-1 * np.linalg.norm(state[0:3])) + 5
-    orientation_reward = (-1 * np.linalg.norm(pybullet.getEulerFromQuaternion(state[3:7]))) * 0.1
-    velocity_reward = (-1 * np.linalg.norm(state[7:10])) * 0.1
-    angular_vel_reward = (-1 * np.linalg.norm(state[10:])) * 0.1
+    orientation_reward = (-1 * np.linalg.norm(pybullet.getEulerFromQuaternion(state[3:7]))) * 0.0 #TODO verify (0, 0, 0) is desired orientation
+    velocity_reward = (-1 * np.linalg.norm(state[7:10])) * 0.2
+    angular_vel_reward = (-1 * np.linalg.norm(state[10:])) * 0.2
     return position_reward + orientation_reward + velocity_reward + angular_vel_reward
 
 def fixed_wing_reward(state, setpoint, debug=False):
@@ -187,7 +187,10 @@ class Logger():
         self.string_list.append(new_string)
     
     def add_named_value(self, name, value):
-        self.string_list.append("{}: {:.4f}".format(name, value))
+        if type(value) is int :
+            self.string_list.append("{}: {}".format(name, value))
+        else: #assuming float
+            self.string_list.append("{}: {:.4f}".format(name, value))
     
     def max_len(self):
         return max(map(len, self.string_list)) 

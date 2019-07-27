@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np 
 import utils 
 from hp import HPStruct, DEFAULT_HPSTRUCT
-from mpi import mpi_statistics_scalar, MpiAdamOptimizer, mpi_avg, num_procs, sync_all_params
+from mpi import mpi_statistics_scalar, MpiAdamOptimizer, mpi_avg, num_procs, sync_all_params, proc_id
 
 """
 PPO modified from OpenAI's SpinningUp implementation
@@ -16,6 +16,7 @@ be converted to single process as such:
 Replace mpi_statistics_scalar, mpi_avg, MpiAdamOptimizer with their single process equivalents
 Remove all instances of dividing steps_per_epoch amongst processes
 Remove sync_all_params call
+Remove proc_id and leave associated statements to run in single process
 """
 
 class PPOBuffer:
@@ -209,7 +210,8 @@ class PPO():
             _, kl = self.sess.run([self.train_pi_op, self.approx_kl], feed_dict=inputs)
             kl = mpi_avg(kl)
             if kl > 1.5 * self.hps.target_kl:
-                print("early stopping at step {} due to reaching max KL".format(i)) #debug
+                if proc_id() == 0:
+                    print("early stopping at step {} due to reaching max KL".format(i)) #debug
                 break
             
         for _ in range(self.hps.train_v_iters):

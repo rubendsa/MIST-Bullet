@@ -30,7 +30,7 @@ for t in range(100000):
 
     env.applyAction(action_to_apply) 
     env.step()
-    time.sleep(env.getVizDelay())
+    # time.sleep(env.getVizDelay())
 
     o = env.getState()
     r = utils.quadrotor_reward(o)

@@ -8,8 +8,8 @@ env.update(
             OMP_NUM_THREADS="1",
             IN_MPI="1"
 )
-n = 4 #threads
-args = ["mpirun", "-np", str(n)]
+n = 8 #threads
+args = ["mpiexec", "-np", str(n)]
 
 args += [sys.executable, "mpi_runner.py"]
 

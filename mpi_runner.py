@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np 
 import time 
 import utils 
+import sys
 
 from ppo import PPO 
 from networks import general_mlp 
@@ -30,6 +31,7 @@ ep_len = 0
 
 
 print("Starting execution in process {}".format(proc_id()))
+sys.stdout.flush()
 for epoch in range(ppo.hps.epochs):
     logger.add_named_value("Epoch", epoch)
     avg_reward = 0
@@ -65,12 +67,16 @@ for epoch in range(ppo.hps.epochs):
 
     logger.add_named_value("Average Reward", avg_reward / ppo.local_steps_per_epoch)
 
-    print("Done with epoch {} in proc #{}".format(epoch, proc_id()))
+    # print("Done with epoch {} in proc #{}".format(epoch, proc_id()))
+    # sys.stdout.flush()
     ppo.update(logger)
+    if proc_id() == 0:
+        print("Done with epoch {} in all processes".format(epoch))
 
     #Log in only 1 process
     if proc_id() == 0:
         logger.output()
+        sys.stdout.flush()
 
     """
     Saving only needs to occur in 1 process

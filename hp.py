@@ -70,7 +70,7 @@ class ATARI_HPSTRUCT(DEFAULT_HPSTRUCT):
     save_freq = 10
 
 class QUADROTOR_HPSTRUCT(DEFAULT_HPSTRUCT):
-    steps_per_epoch = int(10e4)
+    steps_per_epoch = int(10e5)
     epochs = int(10e4)
     gamma = 0.99
     clip_ratio = 0.2
@@ -80,7 +80,7 @@ class QUADROTOR_HPSTRUCT(DEFAULT_HPSTRUCT):
     train_v_iters = 80
     lam = 0.97
     max_ep_len = 1000
-    target_kl = 0.02
+    target_kl = 0.015
     save_freq = 10
     batch_size = int(10e3)
 
