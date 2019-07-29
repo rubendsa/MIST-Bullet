@@ -44,10 +44,11 @@ propIds = [10, 8, 6, 4]
 ###################     RUN SIMULATION     #####################
 
 if __name__ == "__main__":
-    simTime = 10000
+    simTime = 100000
     simDelay = .01
-    p.setTimeStep(.001)
-    p.resetBasePositionAndOrientation(robotId, [-20,0,40], p.getQuaternionFromEuler((3.1415/180)*np.array([0,0,0]))) # Staring position of robot
+    timeStep = .001
+    p.setTimeStep(timeStep)
+    p.resetBasePositionAndOrientation(robotId, [-20,0,40], p.getQuaternionFromEuler((3.1415/180)*np.array([90,90,0]))) # Staring position of robot
     p.resetBaseVelocity(robotId, [0,0,0], [0,0,0])
 
     # p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
@@ -77,20 +78,20 @@ if __name__ == "__main__":
         
         step = i
 
-        if step in range(0, 5000):
-            hingeAngle = 0
-            frameState = "fixedwing"
+        # if step in range(0, int(4/timeStep)):
+        #     hingeAngle = 0
+        #     frameState = "fixedwing"
                 
-            des_yawW = 0
-            des_positionW = [0,10,40] 
-            des_orientationW = p.getQuaternionFromEuler([0,-1.4,3.1415]) # [roll, pitch, yaw]
-            des_velocityW = [0,0,0]
-            des_angular_velocityW = [0,0,0]
+        #     des_yawW = 0
+        #     des_positionW = [0,10,40] 
+        #     des_orientationW = p.getQuaternionFromEuler([0,-1.4,3.1415]) # [roll, pitch, yaw]
+        #     des_velocityW = [0,0,0]
+        #     des_angular_velocityW = [0,0,0]
             
-            robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
-            w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "attitude") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-            w1, w2, w3, w0 = w
-            e1, e2, e3, e0 = e
+        #     robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
+        #     w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "attitude") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+        #     w1, w2, w3, w0 = w
+        #     e1, e2, e3, e0 = e
 
 
         # if step in range(1000, 2000):
@@ -108,13 +109,13 @@ if __name__ == "__main__":
         #     w1, w2, w3, w0 = w
         #     e1, e2, e3, e0 = e
 
-        if step in range(5000, 10000):
+        if step in range(int(0/timeStep), int(20/timeStep)):
             hingeAngle = 1.57
             frameState = "quadrotor"
             
             des_yawW = 0
             des_orientationW = p.getQuaternionFromEuler([0,0,3.14]) # [roll, pitch, yaw]
-            des_positionW = [0,10,50]
+            des_positionW = [30,0,5] 
             des_velocityW = [0,0,0]
             des_angular_velocityW = [0,0,0]
 
@@ -178,7 +179,7 @@ if __name__ == "__main__":
         # print("wdList", wdList)
     
         if i in range(1, 50000):
-            hf.visualizeZoom(robotId, i, 0, 5000, 5, 5, -70, -30) 
+            hf.visualizeZoom(robotId, i, 0, 5000, 7, 7, 0, -30) 
 
         # if i in range(1, 1000):
         #     hf.visualizeZoom(robotId, i, 0, 500, 10, 2)

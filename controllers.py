@@ -5,6 +5,7 @@ import pybullet_data
 
 import numpy as np
 from numpy import linalg as LA
+import math
 
 import helperFunctions as hf
 
@@ -103,6 +104,17 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
     des_xB = np.cross(des_yB, des_zB)
     des_R = np.concatenate((des_xB, des_yB, des_zB), axis = 0).T
 
+    # Apply roll and pitch limits 
+    tiltMax = 20 # Max tilt in degrees
+    tiltMaxR = tiltMax*3.1415/180
+    roll, pitch, yaw = hf.rotationMatrixToEulerAngles(des_R.T)
+    if abs(roll) > tiltMaxR:
+        roll = np.sign(roll)*tiltMaxR
+    if abs(pitch) > tiltMaxR:
+        pitch = np.sign(pitch)*tiltMaxR
+    des_R = hf.eulerAnglesToRotationMatrix([roll, pitch, yaw]).T
+
+
     if ctrlMode == "attitude":
         # RUN ONLY ATTITUDE CONTROLLER: 
         deslistBtoW = p.getMatrixFromQuaternion(des_orientationW)
@@ -128,7 +140,7 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
     u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
     
     u1 = np.clip(u1, 0.0, 100.0)
-    u24 = np.clip(u24, -10.0, 10.0)
+    u24 = np.clip(u24, -120.0, 120.0)
     
     u = np.concatenate((u1, u24))
 
