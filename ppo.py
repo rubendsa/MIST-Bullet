@@ -142,8 +142,10 @@ class PPO():
         if discrete: 
             action_dim = ()
 
-        self.local_steps_per_epoch = int(self.hps.steps_per_epoch / num_procs())
-        self.buf = PPOBuffer(obs_dim, action_dim, self.local_steps_per_epoch, self.hps.gamma, self.hps.lam)
+        # self.local_steps_per_epoch = int(self.hps.steps_per_epoch / num_procs())
+        self.rollouts_per_process = int(self.hps.rollouts_per_epoch / num_procs())
+        self.buffer_size = self.rollouts_per_process * self.hps.rollout_length   
+        self.buf = PPOBuffer(obs_dim, action_dim, self.buffer_size, self.hps.gamma, self.hps.lam)
 
         #PPO Objectives
         with tf.compat.v1.variable_scope("ppo_objectives"):

@@ -13,12 +13,18 @@ import pybullet
 def quadrotor_reward(state):
     """
     Reward based on staying still on target
+    Ranges:
+    position -> [0, inf)
+    orientation -> [0, 10.88]
+    velocity -> [0, inf)
+    angular vel -> [0, inf)
+    on target is 100
     """
-    position_reward = (-1 * np.linalg.norm(state[0:3])) + 5
-    orientation_reward = (-1 * np.linalg.norm(pybullet.getEulerFromQuaternion(state[3:7]))) * 0.0 #TODO verify (0, 0, 0) is desired orientation
-    velocity_reward = (-1 * np.linalg.norm(state[7:10])) * 0.2
-    angular_vel_reward = (-1 * np.linalg.norm(state[10:])) * 0.2
-    return position_reward + orientation_reward + velocity_reward + angular_vel_reward
+    position_reward = (-1 * np.linalg.norm(state[0:3])) + 1
+    # orientation_reward = (-1 * np.linalg.norm(pybullet.getEulerFromQuaternion(state[3:7]))) * 0.0
+    # velocity_reward = (-1 * np.linalg.norm(state[7:10])) * 0.2
+    # angular_vel_reward = (-1 * np.linalg.norm(state[10:])) * 0.2
+    return position_reward * 50
 
 def fixed_wing_reward(state, setpoint, debug=False):
     """
@@ -43,8 +49,7 @@ def quadrotor_action_mod(a):
     """
     Clips the action and sets joints to quadrotor-only
     """
-    #previously had action scale, TODO decide if removal is bad
-    # a *= 10 #doesn't work without an action scale, oddly enough
+    #Action scale???
     a *= 50
     a = [clip(x, 17) for x in a]
     a = np.concatenate((a, [0, 0, 0, 0, 1.57, 1.57, 1.57]))
@@ -178,10 +183,11 @@ class Logger():
     Enter strings using add_string in format ->
     "Name: Value"
     or enter a name and a value using add_named_value to achieve same result
-    TODO add log to file 
+    TODO make the save to file not garbage
     """
     def __init__(self):
         self.string_list = [] 
+        self.val_dict = dict() #TODO add smarter saving
     
     def add_string(self, new_string):
         self.string_list.append(new_string)
@@ -191,6 +197,10 @@ class Logger():
             self.string_list.append("{}: {}".format(name, value))
         else: #assuming float
             self.string_list.append("{}: {:.4f}".format(name, value))
+        # if name in self.val_dict:
+        #     self.val_dict[name].append(value)
+        # else:
+        #     self.val_dict[name] = [value]
     
     def max_len(self):
         return max(map(len, self.string_list)) 
@@ -206,6 +216,13 @@ class Logger():
         out += ("#" * line_size)
         print(out)
         self.string_list = []
+    
+    def write_to_file(self):
+        f = open("./logs/run.txt","w")
+        f.write( str(self.val_dict) )
+        f.close()
+
+    
 
 
     
