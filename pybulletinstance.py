@@ -4,6 +4,9 @@ import pybullet_data
 import numpy as np 
 import utils
 
+import wingDynamics as wd
+import helperFunctions as hf
+
 class PyBulletInstance():
 
     def __init__(self, GUI=False):
@@ -14,7 +17,7 @@ class PyBulletInstance():
         else:
             self.client = bc.BulletClient(connection_mode=pybullet.DIRECT)
         self.client.setAdditionalSearchPath(pybullet_data.getDataPath())
-        self.client.setGravity(0,0,-9.81)
+        self.client.setGravity(0, 0, -9.81)
         self.robotID = self.client.loadURDF("./MIST.urdf", [0, 0, 1], pybullet.getQuaternionFromEuler([0,0,0]))
         self.hingeIDs = [0, 1, 2]
         self.ctrlSurfIDs = [9, 7, 5, 3]
@@ -87,7 +90,7 @@ class PyBulletInstance():
         """
         Applies an action vector (in Newtons) and applies it to the associated links
         """
-        w0, w1, w2, w3, c0, c1, c2, c3, h0, h1, h2 = actionVector
+        w0, w1, w2, w3, e0, e1, e2, e3, h0, h1, h2 = actionVector
 
         Kf = 1 # TODO: Put this in an object. 
         Km = .1
@@ -112,11 +115,24 @@ class PyBulletInstance():
         self.client.applyExternalForce(self.robotID, 2, [0,0, Fm3], [0,0,0], 1) #Apply m3 force[N] on link3, w.r.t. local frame
 
         # Torque for each Motor
-        self.client.applyExternalTorque(self.robotID, -1, [0,0, -Mm0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+        self.client.applyExternalTorque(self.robotID, -1, [0,0, -Mm0], 2) #2 is not a typo #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
         self.client.applyExternalTorque(self.robotID, 0, [0,0, Mm1], 1) 
         self.client.applyExternalTorque(self.robotID, 1, [0,0, -Mm2], 1) 
         self.client.applyExternalTorque(self.robotID, 2, [0,0, Mm3], 1) 
 
+        #Torque for each Elevon
+        # vA, vABody, vNorm, alphar, betar = ws.calcFreeStreamVelocity(self.robotID, 1)
+        # eM_0 = 30 * e0 
+        # eM_1 = 30 * e1 
+        # eM_2 = 30 * e2 
+        # eM_3 = 30 * e3 
+        
+        # self.client.applyExternalTorque(self.robotID, -1, [0, eM_0, 0], 2) #Torque is assumed to be 1/4 thrust
+        # self.client.applyExternalTorque(self.robotID, 0, [0, eM_1, 0], 1)
+        # self.client.applyExternalTorque(self.robotID, 2, [0, eM_2, 0], 1)
+        # self.client.applyExternalTorque(self.robotID, 3, [0, eM_3, 0], 1)    
+
+        # self.client.applyExternalTorque(self.robotId, -1, [0,0,(eM_0+eM_1-eM_2-eM_3)], 2)
 
         # Visual of propeller spinning (not critical)
         self.client.setJointMotorControl2(self.robotID, self.propIDs[0], pybullet.VELOCITY_CONTROL, targetVelocity=w0*10, force=1000) 
@@ -125,15 +141,15 @@ class PyBulletInstance():
         self.client.setJointMotorControl2(self.robotID, self.propIDs[3], pybullet.VELOCITY_CONTROL, targetVelocity=w3*10, force=1000)
         
         # Control surface deflection [rads]
-        self.client.setJointMotorControl2(self.robotID, self.ctrlSurfIDs[0], pybullet.POSITION_CONTROL, targetPosition=c0, force=1000)
-        self.client.setJointMotorControl2(self.robotID, self.ctrlSurfIDs[1], pybullet.POSITION_CONTROL, targetPosition=c1, force=1000)
-        self.client.setJointMotorControl2(self.robotID, self.ctrlSurfIDs[2], pybullet.POSITION_CONTROL, targetPosition=c2, force=1000)
-        self.client.setJointMotorControl2(self.robotID, self.ctrlSurfIDs[3], pybullet.POSITION_CONTROL, targetPosition=c3, force=1000)
+        self.client.setJointMotorControl2(self.robotID, self.ctrlSurfIDs[0], pybullet.POSITION_CONTROL, targetPosition=e0, force=1000)
+        self.client.setJointMotorControl2(self.robotID, self.ctrlSurfIDs[1], pybullet.POSITION_CONTROL, targetPosition=e1, force=1000)
+        self.client.setJointMotorControl2(self.robotID, self.ctrlSurfIDs[2], pybullet.POSITION_CONTROL, targetPosition=e2, force=1000)
+        self.client.setJointMotorControl2(self.robotID, self.ctrlSurfIDs[3], pybullet.POSITION_CONTROL, targetPosition=e3, force=1000)
         
         # Hinge angle [rads]
-        self.client.setJointMotorControl2(self.robotID, self.hingeIDs[0], pybullet.POSITION_CONTROL, targetPosition=h0, force=1000)
-        self.client.setJointMotorControl2(self.robotID, self.hingeIDs[1], pybullet.POSITION_CONTROL, targetPosition=h1, force=1000)
-        self.client.setJointMotorControl2(self.robotID, self.hingeIDs[2], pybullet.POSITION_CONTROL, targetPosition=h2, force=1000)
+        self.client.setJointMotorControl2(self.robotID, self.hingeIDs[0], pybullet.POSITION_CONTROL, targetPosition=h0, maxVelocity=4, force=1000)
+        self.client.setJointMotorControl2(self.robotID, self.hingeIDs[1], pybullet.POSITION_CONTROL, targetPosition=h1, maxVelocity=4, force=1000)
+        self.client.setJointMotorControl2(self.robotID, self.hingeIDs[2], pybullet.POSITION_CONTROL, targetPosition=h2, maxVelocity=4, force=1000)
 
     def applySingleLinkForce(self, force):
         """
@@ -206,6 +222,23 @@ class PyBulletInstance():
         """
         pos = list(np.random.rand(3))
         q = utils.random_quaternion()
+        self.set_to_pos_and_q(pos, q)
+    
+    def reset_upwards(self):
+        """
+        Resets facing mostly upwards
+        """
+        pos = list(np.random.rand(3) * 1.0)
+        # q = pybullet.getQuaternionFromEuler(utils.random_upwards_rpy())
+        q = pybullet.getQuaternionFromEuler(utils.random_45_updwards_rpy())
+        self.set_to_pos_and_q(pos, q)
+    
+    def old_reset_random(self):
+        """
+        Old method of reseting with the random 3-vector function which is broken(?)
+        """
+        pos = list(np.random.rand(3))
+        q = pybullet.getQuaternionFromEuler(utils.random_three_vector())
         self.set_to_pos_and_q(pos, q)
     
     def apply_random_force(self, magnitude):

@@ -120,9 +120,9 @@ class PPO():
                 self.logp_pi = tf.reduce_sum(tf.one_hot(self.pi, depth=act_dim) * logp_all, axis=1, name="logp_pi")
             else: #Gaussian policy
                 mu = y_ph #technicality
-                log_std = tf.compat.v1.get_variable(name='log_std', initializer=-0.5*np.ones(mu.get_shape()[-1], dtype=np.float32)) #
-                std = tf.exp(log_std)
-                self.pi = tf.identity(mu + tf.random.normal(tf.shape(mu)) * std, name="pi")
+                log_std = tf.compat.v1.get_variable(name='log_std', initializer=-0.5*np.ones(mu.get_shape()[-1], dtype=np.float32)) #-0.5 in network output shape
+                std = tf.exp(log_std) #0.6
+                self.pi = tf.identity(mu + tf.random.normal(tf.shape(mu)) * std, name="pi") #why not put std in the random call?
                 self.a_ph = tf.placeholder(dtype=tf.float32, shape=self.pi.get_shape(), name="action")
                 self.logp = utils.gaussian_likelihood(self.a_ph, mu, log_std, name="logp")
                 self.logp_pi = utils.gaussian_likelihood(self.pi, mu, log_std, name="logp_pi")
@@ -144,13 +144,13 @@ class PPO():
 
         # self.local_steps_per_epoch = int(self.hps.steps_per_epoch / num_procs())
         self.rollouts_per_process = int(self.hps.rollouts_per_epoch / num_procs())
-        self.buffer_size = self.rollouts_per_process * self.hps.rollout_length   
-        self.buf = PPOBuffer(obs_dim, action_dim, self.buffer_size, self.hps.gamma, self.hps.lam)
+        buffer_size = self.rollouts_per_process * self.hps.rollout_length   
+        self.buf = PPOBuffer(obs_dim, action_dim, buffer_size, self.hps.gamma, self.hps.lam)
 
         #PPO Objectives
         with tf.compat.v1.variable_scope("ppo_objectives"):
-            self.ratio = tf.exp(self.logp - self.logp_old_ph, name="network_ratio")   #pi(a|s) / pi_old(a|s)
-            self.min_adv = tf.where(self.adv_ph>0, (1+self.hps.clip_ratio)*self.adv_ph, (1-self.hps.clip_ratio)*self.adv_ph, name="min_advantage")
+            self.ratio = tf.exp(self.logp - self.logp_old_ph, name="network_ratio")   #pi(a|x) / pi_old(a|x)
+            self.min_adv = tf.where(self.adv_ph>0, (1+self.hps.clip_ratio)*self.adv_ph, (1-self.hps.clip_ratio)*self.adv_ph, name="min_advantage") #all values are higher
             self.pi_loss = tf.identity(-tf.reduce_mean(tf.minimum(self.ratio * self.adv_ph, self.min_adv)), name="pi_loss")
             self.v_loss = tf.reduce_mean((self.ret_ph - self.v)**2, name="v_loss")
 
@@ -211,8 +211,10 @@ class PPO():
             inputs = {k:v for k,v in zip(self.all_inputs_phs, batch)}
             _, kl = self.sess.run([self.train_pi_op, self.approx_kl], feed_dict=inputs)
             kl = mpi_avg(kl)
-            if kl > 1.5 * self.hps.target_kl:
+            if kl > self.hps.target_kl:
                 if proc_id() == 0:
+                    if kl < 0:
+                        print("Negative KL at step {}".format(i))
                     print("early stopping at step {} due to reaching max KL".format(i)) #debug
                 break
             

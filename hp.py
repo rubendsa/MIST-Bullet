@@ -3,6 +3,7 @@ The goal of this is that you can create a new set of hyperparameters and contain
 Inheritance can be used in cases where only a few modifications between sets is needed
 If a class is constructed by omitting the parentheses -> DEFAULT_HPSTRUCT instead of DEFAULT_HPSTRUCT()
 The __str__ will not perform as desired
+TODO do this as a dict
 """
 
 class HPStruct():
@@ -41,10 +42,11 @@ class DEFAULT_HPSTRUCT(HPStruct):
 
 
 class QUADROTOR_HPSTRUCT(DEFAULT_HPSTRUCT):
-    rollout_length = 250
-    rollouts_per_epoch = 1024
+    rollout_length = 1250
+    rollouts_per_epoch = 200
     batch_size = rollout_length * rollouts_per_epoch
-    epochs = int(10e6 / batch_size)
+    # epochs = int(10e6 / batch_size)
+    epochs = int(10e6)
     gamma = 0.99
     clip_ratio = 0.2
     pi_lr = 3e-4

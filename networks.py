@@ -21,6 +21,11 @@ def general_mlp(x, output_dim=4):
     v_ph = mlp(x, layers=(64, 64, 1), name="value_output")
     return y_ph, v_ph
 
+def quadrotor_mlp_1(x, output_dim=4):
+    y_ph = mlp(x, layers=(512, 256, 128, output_dim), name="y_output")
+    v_ph = mlp(x, layers=(512, 256, 128, 1), name="value_output")
+    return y_ph, v_ph
+
 #TODO decide if this is functional or not 
 def double_conv_pool(input, filters=4, kernel_size=4, pool_size=(2,2), activation=relu):
     c1 = Conv2D(filters, kernel_size=kernel_size, padding="same", activation=activation)(input)

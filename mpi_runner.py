@@ -5,7 +5,7 @@ import utils
 import sys
 
 from ppo import PPO 
-from networks import general_mlp 
+from networks import general_mlp, quadrotor_mlp_1
 from hp import QUADROTOR_HPSTRUCT
 from mpi import proc_id
 from pybulletinstance import PyBulletInstance
@@ -16,12 +16,13 @@ y_ph, v_ph = general_mlp(x_ph, output_dim=4)
 hps = QUADROTOR_HPSTRUCT()
 
 ppo = PPO(x_ph, y_ph, v_ph, discrete=False, hp_struct=hps, name="QuadrotorTest")
-# ppo.restore()
+ppo.restore()
 
 logger = utils.Logger() #TODO move to only proc 0
 
 env = PyBulletInstance(GUI=False)
-env.reset_random()
+env.old_reset_random()
+# env.reset()
 
 o = env.getState()
 r = 0
@@ -35,6 +36,7 @@ start = time.time()
 for epoch in range(ppo.hps.epochs):
     logger.add_named_value("Epoch", epoch)
     avg_reward = 0
+    rew_count = 0
     for rollout in range(ppo.rollouts_per_process):
         for t in range(ppo.hps.rollout_length):
             a, v_t, logp_t = ppo.get_action_ops(o)
@@ -49,12 +51,18 @@ for epoch in range(ppo.hps.epochs):
             ep_ret += r
             ep_len += 1
 
-            avg_reward += r
+            if r < -2: #very arbitrary
+                d = True 
 
-            if t == ppo.hps.rollout_length - 1:
+
+            avg_reward += r
+            rew_count += 1
+
+            if d or t == ppo.hps.rollout_length - 1:
                 last_val = r if d else ppo.get_v(o)
                 ppo.buf.finish_path(last_val)
-                env.reset_random()
+                # env.reset()
+                env.old_reset_random()
                 # env.apply_random_force(10000)
                 o = env.getState()
                 r = 0
@@ -62,7 +70,7 @@ for epoch in range(ppo.hps.epochs):
                 ep_ret = 0 
                 ep_len = 0
 
-    logger.add_named_value("Average Reward", avg_reward / ppo.buffer_size)
+    logger.add_named_value("Average Reward", avg_reward / rew_count)
 
     ppo.update(logger)
 

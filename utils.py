@@ -18,13 +18,13 @@ def quadrotor_reward(state):
     orientation -> [0, 10.88]
     velocity -> [0, inf)
     angular vel -> [0, inf)
-    on target is 100
     """
-    position_reward = (-1 * np.linalg.norm(state[0:3])) + 1
+    acceptable_pos_error = 1 #meters
+    position_reward = acceptable_pos_error - (np.linalg.norm(state[0:3]))
     # orientation_reward = (-1 * np.linalg.norm(pybullet.getEulerFromQuaternion(state[3:7]))) * 0.0
     # velocity_reward = (-1 * np.linalg.norm(state[7:10])) * 0.2
     # angular_vel_reward = (-1 * np.linalg.norm(state[10:])) * 0.2
-    return position_reward * 50
+    return position_reward
 
 def fixed_wing_reward(state, setpoint, debug=False):
     """
@@ -95,7 +95,7 @@ def random_three_vector():
     Generates a random 3D unit vector (direction) with a uniform spherical distribution
     Algo from http://stackoverflow.com/questions/5408276/python-uniform-spherical-distribution
     This isn't the function we need
-    TODO remove
+    Max range is (-1, 1) for any individual value, as long as it doesn't leave bounds of the unit sphere
     """
     phi = np.random.uniform(0,np.pi*2)
     costheta = np.random.uniform(-1,1)
@@ -106,6 +106,10 @@ def random_three_vector():
     z = np.cos(theta)
     return (x,y,z)
 
+"""
+These 3 rpy functions are bad practice and should be condensed/changed
+TODO
+"""
 def random_rpy():
     """
     Generates random values for roll, pitch, and yaw between 0 and 2pi
@@ -115,6 +119,30 @@ def random_rpy():
     y = np.random.uniform(0, np.pi*2)
 
     return (r, p, y)
+
+def random_upwards_rpy():
+    """
+    Generates random value for roll, pitch, and yaw between -pi/2 and pi/2
+    Result is a mostly upwards facing quadrotor
+    """
+    r = np.random.uniform(-np.pi/2, np.pi/2)
+    p = np.random.uniform(-np.pi/2, np.pi/2)
+    y = np.random.uniform(-np.pi/2, np.pi/2)
+
+    return (r, p, y)
+
+def random_45_updwards_rpy():
+    """
+    Generates random value for rpy between -pi/4 and pi/4
+    This corresponds with at most a 45 degree tilt
+    And thus should be very easy to learn from
+    """
+    r = np.random.uniform(-np.pi/4, np.pi/4)
+    p = np.random.uniform(-np.pi/4, np.pi/4)
+    y = np.random.uniform(-np.pi/4, np.pi/4)
+    
+    return (r, p, y)
+
 
 def random_quaternion():
     """
@@ -147,7 +175,10 @@ def discount_cumsum(x, discount):
 
 def gaussian_likelihood(x, mu, log_std, eps=1e-8, name="logp"):
     """
-    Produces a gaussian likelihood tensor to sample from
+    Produces a logp tensor
+    Represents the log of the odds of taking action a | x
+    Other than (x-mu) (which represents how far the sample deviates from the original polciy), the formula is constants
+    exp of output will yield higher values the closer x and mu are to each other, maximum val is relative to log_std
     """
     pre_sum = -0.5 * (((x-mu)/(tf.exp(log_std)+eps))**2 + 2*log_std + np.log(2*np.pi))
     return tf.reduce_sum(pre_sum, axis=1, name=name)
