@@ -1,7 +1,7 @@
 import tensorflow as tf 
 import numpy as np 
 import utils 
-from hp import HPStruct, DEFAULT_HPSTRUCT
+from hp import HPStruct
 from mpi import mpi_statistics_scalar, MpiAdamOptimizer, mpi_avg, num_procs, sync_all_params, proc_id
 
 """
@@ -99,10 +99,7 @@ class PPO():
         self.x_ph = x_ph 
         self.y_ph = y_ph
        
-        if hp_struct is None:
-            self.hps = DEFAULT_HPSTRUCT()
-        else:
-            self.hps = hp_struct
+        self.hps = hp_struct
         self.save_name = str(save_path + name + ".ckpt") 
         
         self.adv_ph = tf.placeholder(dtype=tf.float32, shape=(None), name="advantage")
@@ -142,10 +139,8 @@ class PPO():
         if discrete: 
             action_dim = ()
 
-        # self.local_steps_per_epoch = int(self.hps.steps_per_epoch / num_procs())
-        self.rollouts_per_process = int(self.hps.rollouts_per_epoch / num_procs())
-        buffer_size = self.rollouts_per_process * self.hps.rollout_length   
-        self.buf = PPOBuffer(obs_dim, action_dim, buffer_size, self.hps.gamma, self.hps.lam)
+        self.local_steps_per_epoch = int(self.hps.steps_per_epoch / num_procs())
+        self.buf = PPOBuffer(obs_dim, action_dim, self.local_steps_per_epoch, self.hps.gamma, self.hps.lam)
 
         #PPO Objectives
         with tf.compat.v1.variable_scope("ppo_objectives"):

@@ -16,7 +16,7 @@ y_ph, v_ph = general_mlp(x_ph, output_dim=4)
 hps = QUADROTOR_HPSTRUCT()
 
 ppo = PPO(x_ph, y_ph, v_ph, discrete=False, hp_struct=hps, name="QuadrotorTest")
-ppo.restore()
+# ppo.restore()
 
 logger = utils.Logger() #TODO move to only proc 0
 
@@ -32,45 +32,51 @@ ep_len = 0
 
 
 print("Starting execution in process {}".format(proc_id()))
+sys.stdout.flush()
 start = time.time()
 for epoch in range(ppo.hps.epochs):
     logger.add_named_value("Epoch", epoch)
-    avg_reward = 0
-    rew_count = 0
-    for rollout in range(ppo.rollouts_per_process):
-        for t in range(ppo.hps.rollout_length):
-            a, v_t, logp_t = ppo.get_action_ops(o)
+    max_ep_ret = float("-inf")
+    for t in range(ppo.local_steps_per_epoch):
+        a, v_t, logp_t = ppo.get_action_ops(o)
 
-            ppo.buf.store(obs=o, act=a, rew=r, val=v_t, logp=logp_t)
-            action_to_apply = utils.quadrotor_action_mod(a[0])
-            
-            env.applyAction(action_to_apply) 
-            env.step()
+        ppo.buf.store(obs=o, act=a, rew=r, val=v_t, logp=logp_t)
+        action_to_apply = utils.quadrotor_action_mod(a[0])
+        
+        env.applyAction(action_to_apply) 
+        env.step()
+        o = env.getState()
+        r = utils.quadrotor_reward(o)
+        ep_ret += r
+        ep_len += 1
+
+        
+        """
+        3 ways to end rollout and associated terminal value:
+        1) Reward to low (reward)
+        2) End of epoch (value network)
+        3) Time limit reached (value network)
+        """
+        if r < -20: #very arbitrary  
+            d = True 
+
+        if d or t == ppo.local_steps_per_epoch - 1: # or ep_len > ppo.hps.max_steps_per_rollout:
+            last_val = r if d else ppo.get_v(o)
+            ppo.buf.finish_path(last_val)
+            # env.reset()
+            env.old_reset_random()
+
+            if d: # or ep_len > ppo.hps.max_steps_per_rollout:
+                if (ep_ret / ep_len) > max_ep_ret:
+                    max_ep_ret = (ep_ret / ep_len)
+
             o = env.getState()
-            r = utils.quadrotor_reward(o)
-            ep_ret += r
-            ep_len += 1
+            r = 0
+            d = False 
+            ep_ret = 0 
+            ep_len = 0
 
-            if r < -2: #very arbitrary
-                d = True 
-
-
-            avg_reward += r
-            rew_count += 1
-
-            if d or t == ppo.hps.rollout_length - 1:
-                last_val = r if d else ppo.get_v(o)
-                ppo.buf.finish_path(last_val)
-                # env.reset()
-                env.old_reset_random()
-                # env.apply_random_force(10000)
-                o = env.getState()
-                r = 0
-                d = False 
-                ep_ret = 0 
-                ep_len = 0
-
-    logger.add_named_value("Average Reward", avg_reward / rew_count)
+    logger.add_named_value("Max Ep Ret", max_ep_ret)
 
     ppo.update(logger)
 

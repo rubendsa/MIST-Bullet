@@ -19,7 +19,7 @@ def quadrotor_reward(state):
     velocity -> [0, inf)
     angular vel -> [0, inf)
     """
-    acceptable_pos_error = 1 #meters
+    acceptable_pos_error = 5 #meters
     position_reward = acceptable_pos_error - (np.linalg.norm(state[0:3]))
     # orientation_reward = (-1 * np.linalg.norm(pybullet.getEulerFromQuaternion(state[3:7]))) * 0.0
     # velocity_reward = (-1 * np.linalg.norm(state[7:10])) * 0.2
