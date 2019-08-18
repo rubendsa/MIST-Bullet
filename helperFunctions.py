@@ -174,3 +174,9 @@ def eulerAnglesToRotationMatrix(theta) :
     R = np.dot(R_z, np.dot( R_y, R_x ))
  
     return R
+
+
+# class actuatorStored(self):
+#     def motors(self):
+#         self.w1, w2, w3, w0 = w
+#             e1, e2, e3, e0 = e

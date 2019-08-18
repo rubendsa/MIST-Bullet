@@ -2,7 +2,6 @@ import pybullet as p
 import time
 import pybullet_data
 
-
 import numpy as np
 from numpy import linalg as LA
 import math
@@ -105,7 +104,7 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
     des_R = np.concatenate((des_xB, des_yB, des_zB), axis = 0).T
 
     # Apply roll and pitch limits 
-    tiltMax = 5 # Max tilt in degrees
+    tiltMax = 15 # Max tilt in degrees
     tiltMaxR = tiltMax*3.1415/180
     roll, pitch, yaw = hf.rotationMatrixToEulerAngles(des_R.T)
     if abs(roll) > tiltMaxR:
