@@ -40,13 +40,16 @@ hingeIds = [0, 1, 2]
 ctrlSurfIds = [9,  7, 5, 3]
 propIds = [10, 8, 6, 4]
 
+for i in range(p.getNumJoints(robotId)):
+    p.enableJointForceTorqueSensor(robotId, i, 1)
+
 
 ###################     RUN SIMULATION     #####################
 
 if __name__ == "__main__":
-    simTime = 100000
     simDelay = .01
-    timeStep = .001
+    timeStep = .002
+    simTime = int(9/timeStep)
     p.setTimeStep(timeStep)
     p.resetBasePositionAndOrientation(robotId, [-20,0,40], p.getQuaternionFromEuler((3.1415/180)*np.array([90,90,0]))) # Staring position of robot
     p.resetBaseVelocity(robotId, [0,0,0], [0,0,0])
@@ -62,60 +65,42 @@ if __name__ == "__main__":
 
     eList = np.array([[None, None, None, None]])
     wList = np.array([[None, None, None, None]])
-    wdList0 = np.array([[None, None, [None, None, None], None]])
-    wdList1 = np.array([[None, None, [None, None, None], None]])
-    wdList2 = np.array([[None, None, [None, None, None], None]])
-    wdList3 = np.array([[None, None, [None, None, None], None]])
-
+    wdList0 = np.array([[None, None, [None, None, None], None, None, None]])
+    wdList1 = np.array([[None, None, [None, None, None], None, None, None]])
+    wdList2 = np.array([[None, None, [None, None, None], None, None, None]])
+    wdList3 = np.array([[None, None, [None, None, None], None, None, None]])
+    hingeReactionList = np.array([[ None, None, None]])
+    hingeTorqueList = np.array([[ None, None, None]])
+    # fm.applyAction([0, 0, 0, 0, .1, .1, .1, .1, 1.57, 1.57, 1.57], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
+            # fm.applyAction([0, 0, 0, 0, .1, .1, .1, .1, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
+            # fm.applyAction([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
 
     for i in range (simTime): #Time to run simulation
         p.stepSimulation()
         # time.sleep(simDelay)
-
-        # fm.applyAction([0, 0, 0, 0, .1, .1, .1, .1, 1.57, 1.57, 1.57], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
-        # fm.applyAction([0, 0, 0, 0, .1, .1, .1, .1, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
-        # fm.applyAction([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
-        
         step = i
 
-        # if step in range(0, int(4/timeStep)):
-        #     hingeAngle = 0
-        #     frameState = "fixedwing"
-                
-        #     des_yawW = 0
-        #     des_positionW = [0,10,40] 
-        #     des_orientationW = p.getQuaternionFromEuler([0,-1.4,3.1415]) # [roll, pitch, yaw]
-        #     des_velocityW = [0,0,0]
-        #     des_angular_velocityW = [0,0,0]
-            
-        #     robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
-        #     w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "attitude") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-        #     w1, w2, w3, w0 = w
-        #     e1, e2, e3, e0 = e
+        if step in range(int(0/timeStep), int(4/timeStep)):
+            hingeAngle = 0
+            frameState = "fixedwing"
+            des_yawW = 0
+            des_positionW = [0,10,40] 
+            des_orientationW = p.getQuaternionFromEuler([0,-1.4,3.1415]) # [roll, pitch, yaw]
+            des_velocityW = [0,0,0]
+            des_angular_velocityW = [0,0,0]
+            robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
+            w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "position") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            w1, w2, w3, w0 = w
+            e1, e2, e3, e0 = e
 
 
-        # if step in range(1000, 2000):
-        #     hingeAngle = 0
-        #     frameState = "fixedwing"
-            
-        #     des_yawW = 0
-        #     des_orientationW = p.getQuaternionFromEuler([0,-1.4,3.1415]) # [roll, pitch, yaw]
-        #     des_positionW = [20,10,10]
-        #     des_velocityW = [0,0,0]
-        #     des_angular_velocityW = [0,0,0]
-            
-        #     robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
-        #     w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "attitude") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
-        #     w1, w2, w3, w0 = w
-        #     e1, e2, e3, e0 = e
-
-        if step in range(int(0/timeStep), int(20/timeStep)):
+        if step in range(int(4/timeStep), int(5/timeStep)):
             hingeAngle = 1.57
             frameState = "quadrotor"
             
             des_yawW = 0
             des_orientationW = p.getQuaternionFromEuler([0,0,3.14]) # [roll, pitch, yaw]
-            des_positionW = [30,0,5] 
+            des_positionW = [0,10,40] 
             des_velocityW = [0,0,0]
             des_angular_velocityW = [0,0,0]
 
@@ -124,8 +109,35 @@ if __name__ == "__main__":
             w1, w2, w3, w0 = w
             e1, e2, e3, e0 = e
 
+
+        if step in range(int(5/timeStep), int(7/timeStep)):
+            hingeAngle = 0
+            frameState = "fixedwing"
+            des_yawW = 0
+            des_positionW = [0,10,40] 
+            des_orientationW = p.getQuaternionFromEuler([0,-1.4,3.1415]) # [roll, pitch, yaw]
+            des_velocityW = [0,0,0]
+            des_angular_velocityW = [0,0,0]
+            robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
+            w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "position") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            w1, w2, w3, w0 = w
+            e1, e2, e3, e0 = e
+
             
+        if step in range(int(7/timeStep), int(9/timeStep)):
+            hingeAngle = 1.57
+            frameState = "quadrotor"
             
+            des_yawW = 0
+            des_orientationW = p.getQuaternionFromEuler([0,0,3.14]) # [roll, pitch, yaw]
+            des_positionW = [0,10,40] 
+            des_velocityW = [0,0,0]
+            des_angular_velocityW = [0,0,0]
+
+            robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
+            w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "position") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+            w1, w2, w3, w0 = w
+            e1, e2, e3, e0 = e
             
 
         
@@ -166,20 +178,19 @@ if __name__ == "__main__":
 
         
         wing0, wing1, wing2, wing3 = fm.applyAction([w0, w1, w2, w3, e0, e1, e2, e3, hingeAngle, hingeAngle, hingeAngle], robotId, hingeIds, ctrlSurfIds, propIds)
-        # print("wings", [wing0])
-        # print("wings", [wdList0])
+        
+        hingeReactionList = np.append(hingeReactionList, np.array([[p.getJointState(robotId, hingeIds[0])[2][5], p.getJointState(robotId, hingeIds[1])[2][5], p.getJointState(robotId, hingeIds[2])[2][5]]]), axis = 0)
+        hingeTorqueList = np.append(hingeTorqueList, np.array([[p.getJointState(robotId, hingeIds[0])[3], p.getJointState(robotId, hingeIds[1])[3], p.getJointState(robotId, hingeIds[2])[3]]]), axis = 0)
         wdList0 = np.append(wdList0, [wing0], axis = 0)
         wdList1 = np.append(wdList1, [wing1], axis = 0)
         wdList2 = np.append(wdList2, [wing2], axis = 0)
         wdList3 = np.append(wdList3, [wing3], axis = 0)
         eList = np.append(eList, np.array([e1,e2,e3,e0]).T, axis = 0)
         wList = np.append(wList, (np.array([w1,w2,w3,w0]).T)/147440000, axis = 0)
-        # print("wdlist0", wdList0)
-
-        # print("wdList", wdList)
+        
     
         if i in range(1, 50000):
-            hf.visualizeZoom(robotId, i, 0, 5000, 7, 7, 0, -30) 
+            hf.visualizeZoom(robotId, i, 0, 5000, 5, 5, -70, -30) 
 
         # if i in range(1, 1000):
         #     hf.visualizeZoom(robotId, i, 0, 500, 10, 2)
@@ -224,6 +235,32 @@ plt.plot(wdList0[1:,1], 'k')
 plt.plot(wdList1[1:,1], 'r')
 plt.plot(wdList2[1:,1], 'g')
 plt.plot(wdList3[1:,1], 'b')
+
+# Rel Fx
+plt.figure(5)
+plt.plot(wdList0[1:,4], 'k')
+plt.plot(wdList1[1:,4], 'r')
+plt.plot(wdList2[1:,4], 'g')
+plt.plot(wdList3[1:,4], 'b')
+
+# Rel Fz
+plt.figure(6)
+plt.plot(wdList0[1:,5], 'k')
+plt.plot(wdList1[1:,5], 'r')
+plt.plot(wdList2[1:,5], 'g')
+plt.plot(wdList3[1:,5], 'b')
+
+# Hinge Reaction torque
+plt.figure(7)
+plt.plot(hingeReactionList[:,0], 'k')
+plt.plot(hingeReactionList[:,1], 'r')
+plt.plot(hingeReactionList[:,2], 'g')
+
+# Hinge torque
+plt.figure(8)
+plt.plot(hingeTorqueList[:,0], 'k')
+plt.plot(hingeTorqueList[:,1], 'r')
+plt.plot(hingeTorqueList[:,2], 'g')
 
 
 plt.show()

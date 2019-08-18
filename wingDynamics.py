@@ -3,6 +3,8 @@ import time
 import pybullet_data
 
 import numpy as np
+from numpy import linalg as LA
+
 import math
 
 
@@ -88,11 +90,23 @@ def wingDynamics(robotId, wingId):
     FRelx = hf.rotY(alphar) @ [[-FL], [0], [0]]
     FRelz = hf.rotY(alphar) @ [[0], [0], [-FD]]
 
-    # p.applyExternalForce(robotId, wingId, FRel, [0,0,-.02], 1)
+    p.applyExternalForce(robotId, wingId, FRel, [0,0,-.02], 1)
     
-    # if wingId == -1:
-    #     p.applyExternalTorque(robotId, wingId, [0, -M, 0], 2) # # BUG: for the base_link, p.LINK_FRAME=1 is inverted with p.WORLD_FRAME=2. Hence, for LINK_FRAME, we have to use 2. https://github.com/bulletphysics/bullet3/issues/1949 
-    # else:
-    #     p.applyExternalTorque(robotId, wingId, [0, -M, 0], 1)
+    if wingId == -1:
+        p.applyExternalTorque(robotId, wingId, [0, -M, 0], 2) # # BUG: for the base_link, p.LINK_FRAME=1 is inverted with p.WORLD_FRAME=2. Hence, for LINK_FRAME, we have to use 2. https://github.com/bulletphysics/bullet3/issues/1949 
+    else:
+        p.applyExternalTorque(robotId, wingId, [0, -M, 0], 1)
     
-    return alphar, vNorm, FRel.T, M
+    # Debug for wing force
+    # p.addUserDebugLine([0,0,-.02], [FzBody, 0, 0], [0,0,1.0], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .1)
+    # p.addUserDebugLine([0,0,-.02], [0,0,-FL * math.sin(alphar)], [1,0,0], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .1)
+    # p.addUserDebugLine([0,0,-.02], [0,0,-FD * math.cos(alphar)], [0,0,1], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .1)
+    # p.addUserDebugLine([0,0,-.02], [-FL,0,0], [1,0,0], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .5)
+    # p.addUserDebugLine([0,0,-.02], [0,0,-FD], [0,0,1], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .5)
+    ## Plot Lift and Drag
+    # p.addUserDebugLine([0,0,-.02], [FRelx[0],0,FRelx[2]], [1,0,0], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .3)
+    # p.addUserDebugLine([0,0,-.02], [FRelz[0],0,FRelz[2]], [0,0,1], parentObjectUniqueId = 1, parentLinkIndex = wingId, lifeTime = .3)
+    
+
+
+    return alphar, vNorm, FRel.T, M, LA.norm(FRelx), LA.norm(FRelz)

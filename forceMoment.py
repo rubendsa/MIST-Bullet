@@ -51,15 +51,18 @@ def applyAction(actionVector, robotId, hingeIds, ctrlSurfIds, propIds):
     p.applyExternalTorque(robotId, 2, [0,0, Mm3], 1) 
 
     # Torque for each Elevon
-    vA, vABody, vNorm, alphar, betar = wd.calcFreeStreamVelocity(robotId, 1)
-    # eM_0 = 1*(.1*(e0 * Fm0) + .1*(e0 * vNorm))
-    # eM_1 = 1*(.1*(e1 * Fm1) + .1*(e1 * vNorm))
-    # eM_2 = 1*(.1*(e2 * Fm2) + .1*(e2 * vNorm))
-    # eM_3 = 1*(.1*(e3 * Fm3) + .1*(e3 * vNorm))
-    eM_0 = 30*e0
-    eM_1 = 30*e1
-    eM_2 = 30*e2
-    eM_3 = 30*e3
+    vNorm0 = wd.calcFreeStreamVelocity(robotId, 0)[2]
+    vNorm1 = wd.calcFreeStreamVelocity(robotId, 1)[2]
+    vNorm2 = wd.calcFreeStreamVelocity(robotId, 2)[2]
+    vNorm3 = wd.calcFreeStreamVelocity(robotId, 3)[2]
+    eM_0 = 1*(.1*(e0 * Fm0) + .1*(e0 * vNorm0))
+    eM_1 = 1*(.1*(e1 * Fm1) + .1*(e1 * vNorm1))
+    eM_2 = 1*(.1*(e2 * Fm2) + .1*(e2 * vNorm2))
+    eM_3 = 1*(.1*(e3 * Fm3) + .1*(e3 * vNorm3))
+    # eM_0 = 30*e0
+    # eM_1 = 30*e1
+    # eM_2 = 30*e2
+    # eM_3 = 30*e3
     # print("eM_0", eM_0, "vNorm", vNorm)
     p.applyExternalTorque(robotId, -1, [0,eM_0,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
     p.applyExternalTorque(robotId, 0, [0,eM_1,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
@@ -96,9 +99,9 @@ def applyAction(actionVector, robotId, hingeIds, ctrlSurfIds, propIds):
     p.setJointMotorControl2(robotId, ctrlSurfIds[3], pCtrl, targetPosition=2*e3, force=1000)
     
     # Hinge angle [rads]
-    p.setJointMotorControl2(robotId, hingeIds[0], pCtrl, targetPosition=h0, maxVelocity=8, force=10000)
-    p.setJointMotorControl2(robotId, hingeIds[1], pCtrl, targetPosition=h1, maxVelocity=8, force=10000)
-    p.setJointMotorControl2(robotId, hingeIds[2], pCtrl, targetPosition=h2, maxVelocity=8, force=10000)
+    p.setJointMotorControl2(robotId, hingeIds[0], pCtrl, targetPosition=h0, maxVelocity=4, force=10000)
+    p.setJointMotorControl2(robotId, hingeIds[1], pCtrl, targetPosition=h1, maxVelocity=4, force=10000)
+    p.setJointMotorControl2(robotId, hingeIds[2], pCtrl, targetPosition=h2, maxVelocity=4, force=10000)
 
 
 
