@@ -176,7 +176,12 @@ def eulerAnglesToRotationMatrix(theta) :
     return R
 
 
-# class actuatorStored(self):
-#     def motors(self):
-#         self.w1, w2, w3, w0 = w
-#             e1, e2, e3, e0 = e
+def power_required_mt2814(rpm):
+    # mt2814_power = [0, 71.04, 118.4, 187.96, 250.12, 309.32]
+    # mt2814_mass = [0, 680, 980, 1330, 1610, 1810]
+    mt2814_770KV_12_power = [0, 88.8, 146.52, 193.88, 260.48, 313.76]
+    mt2814_770KV_12_rpm = [0, 5720,6800,7540,8350, 8800]
+    # thrust_power = 2*np.interp(mass/2, mt2814_mass, mt2814_power)
+    rpm_power = np.interp(rpm, mt2814_770KV_12_rpm, mt2814_770KV_12_power)
+    
+    return rpm_power

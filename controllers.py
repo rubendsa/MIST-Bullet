@@ -31,10 +31,10 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
     # K_rotation = np.eye(3) * np.array([[200, 200, 200]])
     # K_angularVelocity = np.eye(3) * np.array([[100, 100, 100]])
 
-    K_position = .5 * K_position
-    K_velocity = .5 * K_velocity
-    K_rotation = .5 * K_rotation
-    K_angularVelocity = .5 * K_angularVelocity
+    K_position = 1 * K_position
+    K_velocity = 3 * K_velocity
+    K_rotation = 3 * K_rotation
+    K_angularVelocity = 3 * K_angularVelocity
 
     # K_position = 1 * K_position
     # K_velocity = 1 * K_velocity
@@ -43,14 +43,19 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
 
     # Kf = 1
     # Km = .1
-    Kf = 2.02E-7
-    Km = 2.02E-8
+    # Kf = 2.02E-7
+    # Km = 2.02E-8
+    # Kf = 2.0268E-7 #710 KV
+    # Km = 2.0268E-8
+    Kf = 2.0661E-7 # 770 KV
+    Km = 2.0661E-8
+
 
     # Kf = 8.54858e-06
     # Km = kf * .06
     L = .28
 
-    mass = 4 #Mass in [kg]
+    mass = 3.68 #Mass in [kg]
     gravity = 9.81
 
     # Get pose
@@ -170,8 +175,9 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
         [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)],
         [ 0,    0,    1/(2*Kf*L),     1/(4*Km)]])
         
-    # w2Limit = 77440000
-    w2Limit = 147440000
+    # w2Limit = 63202500 #7950RPM
+    w2Limit = 77440000 #8800RPM
+    # w2Limit = 147440000
     w2 = LA.inv(geo) @ u
     w2 = np.clip(w2,0, w2Limit) #8800 peak RPM -> w2 is angularvelocity^2 -> 8800^(2) =~ 77440000
     w = w2

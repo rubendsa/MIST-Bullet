@@ -3,5 +3,10 @@
     "python.pythonPath": "/Users/rubendsa/anaconda3/bin/python",
     "cSpell.words": [
         "pybullet"
-    ]
+    ],
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#2D0E8A",
+        "titleBar.activeBackground": "#3E13C1",
+        "titleBar.activeForeground": "#FDFCFF"
+    }
 }

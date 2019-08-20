@@ -48,40 +48,44 @@ for i in range(p.getNumJoints(robotId)):
 
 if __name__ == "__main__":
     simDelay = .01
-    timeStep = .0001
-    simTime = int(1/timeStep)
+    timeStep = .01
+    simTime = 15 # Sim time in [s]
+    simSteps = int(simTime/timeStep)
+
+    ctrlTimeStep = .01
+    ctrlStep = int(ctrlTimeStep/timeStep)
+    ctrlUpdateStep = 0
+
     p.setTimeStep(timeStep)
-    p.resetBasePositionAndOrientation(robotId, [-20,0,15], p.getQuaternionFromEuler((3.1415/180)*np.array([90,90,0]))) # Staring position of robot
+    p.resetBasePositionAndOrientation(robotId, [-20,0,25], p.getQuaternionFromEuler((3.1415/180)*np.array([0,0,0]))) # Staring position of robot
     p.resetBaseVelocity(robotId, [0,0,0], [0,0,0])
 
     # p.resetBasePositionAndOrientation(robotId, [0,0,10], [.5,0,0,.5]) # Staring position of robot
     # p.resetBaseVelocity(robotId, [0,2,0], [2,0,0])
-    # recordedElevonAngles = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
-    # recordedHinge = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
-    # recordedTestHinge = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
-    # recordedvA = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
-    # recordedvABody = [[0.] * int(simTime), [0.] * int(simTime), [0.] * int(simTime)]
-    # recorded_alphaR = [[0.] * int(simTime)]
+    # recordedElevonAngles = [[0.] * int(simSteps), [0.] * int(simSteps), [0.] * int(simSteps), [0.] * int(simSteps)]
+    # recordedHinge = [[0.] * int(simSteps), [0.] * int(simSteps), [0.] * int(simSteps), [0.] * int(simSteps)]
+    # recordedTestHinge = [[0.] * int(simSteps), [0.] * int(simSteps), [0.] * int(simSteps)]
+    # recordedvA = [[0.] * int(simSteps), [0.] * int(simSteps), [0.] * int(simSteps)]
+    # recordedvABody = [[0.] * int(simSteps), [0.] * int(simSteps), [0.] * int(simSteps)]
+    # recorded_alphaR = [[0.] * int(simSteps)]
 
-    eList = np.array([[None, None, None, None]])
-    wList = np.array([[None, None, None, None]])
-    wdList0 = np.array([[None, None, [None, None, None], None, None, None]])
-    wdList1 = np.array([[None, None, [None, None, None], None, None, None]])
-    wdList2 = np.array([[None, None, [None, None, None], None, None, None]])
-    wdList3 = np.array([[None, None, [None, None, None], None, None, None]])
-    hingeReactionList = np.array([[ None, None, None]])
-    hingeTorqueList = np.array([[ None, None, None]])
+    eList = np.array([[0, 0, 0, 0]])
+    wList = np.array([[0, 0, 0, 0]])
+    wdList0 = np.array([[0, 0, [0, 0, 0], 0, 0, 0,[0, 0, 0],[0, 0, 0]]])
+    wdList1 = np.array([[0, 0, [0, 0, 0], 0, 0, 0,[0, 0, 0],[0, 0, 0]]])
+    wdList2 = np.array([[0, 0, [0, 0, 0], 0, 0, 0,[0, 0, 0],[0, 0, 0]]])
+    wdList3 = np.array([[0, 0, [0, 0, 0], 0, 0, 0,[0, 0, 0],[0, 0, 0]]])
+    hingeReactionList = np.array([[ 0, 0, 0]])
+    hingeTorqueList = np.array([[ 0, 0, 0]])
 
     motorValStored = np.array([[0,0,0,0]]).T
     elevonValStored = np.array([[0,0,0,0]]).T
-    ctrlTimeStep = .001
-    ctrlStep = int(ctrlTimeStep/timeStep)
-    ctrlUpdateStep = 0
+
     # fm.applyAction([0, 0, 0, 0, .1, .1, .1, .1, 1.57, 1.57, 1.57], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
             # fm.applyAction([0, 0, 0, 0, .1, .1, .1, .1, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
             # fm.applyAction([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
 
-    for i in range (simTime): #Time to run simulation
+    for i in range (simSteps): #Time to run simulation
         p.stepSimulation()
         # time.sleep(simDelay)
         step = i
@@ -90,7 +94,7 @@ if __name__ == "__main__":
         #     hingeAngle = 0
         #     frameState = "fixedwing"
         #     des_yawW = 0
-        #     des_positionW = [0,10,40] 
+        #     des_positionW = [0,10,10] 
         #     des_orientationW = p.getQuaternionFromEuler([0,-1.4,3.1415]) # [roll, pitch, yaw]
         #     des_velocityW = [0,0,0]
         #     des_angular_velocityW = [0,0,0]
@@ -100,13 +104,13 @@ if __name__ == "__main__":
         #     e1, e2, e3, e0 = e
 
 
-        # if step in range(int(4/timeStep), int(5/timeStep)):
+        # if step in range(int(0/timeStep), int(6/timeStep)):
         #     hingeAngle = 1.57
         #     frameState = "quadrotor"
             
         #     des_yawW = 0
         #     des_orientationW = p.getQuaternionFromEuler([0,0,3.14]) # [roll, pitch, yaw]
-        #     des_positionW = [0,10,40] 
+        #     des_positionW = [10,0,10] 
         #     des_velocityW = [0,0,0]
         #     des_angular_velocityW = [0,0,0]
 
@@ -116,7 +120,7 @@ if __name__ == "__main__":
         #     e1, e2, e3, e0 = e
 
 
-        # if step in range(int(5/timeStep), int(7/timeStep)):
+        # if step in range(int(6/timeStep), int(8/timeStep)):
         #     hingeAngle = 0
         #     frameState = "fixedwing"
         #     des_yawW = 0
@@ -130,7 +134,7 @@ if __name__ == "__main__":
         #     e1, e2, e3, e0 = e
 
             
-        # if step in range(int(7/timeStep), int(9/timeStep)):
+        # if step in range(int(8/timeStep), int(10/timeStep)):
         #     hingeAngle = 1.57
         #     frameState = "quadrotor"
             
@@ -152,7 +156,7 @@ if __name__ == "__main__":
             
             des_yawW = 0
             des_orientationW = p.getQuaternionFromEuler([0,0,3.14]) # [roll, pitch, yaw]
-            des_positionW = [20,0,5] 
+            des_positionW = [0,0,25] 
             des_velocityW = [0,0,0]
             des_angular_velocityW = [0,0,0]
 
@@ -160,6 +164,12 @@ if __name__ == "__main__":
             
             if step > (ctrlUpdateStep + ctrlStep):
                 w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "position") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+
+                # for m in range(0, len(w)):
+                #     clipThrottle = 1e7
+                #     if (np.abs(w[m]-motorValStored[m])) > clipThrottle: 
+                #         w[m] = motorValStored[m] + np.sign(w[m]-motorValStored[m]) * clipThrottle
+                
                 motorValStored = w
                 elevonValStored = e
                 ctrlUpdateStep = step
@@ -176,11 +186,11 @@ if __name__ == "__main__":
         wdList2 = np.append(wdList2, [wing2], axis = 0)
         wdList3 = np.append(wdList3, [wing3], axis = 0)
         eList = np.append(eList, np.array([e1,e2,e3,e0]).T, axis = 0)
-        wList = np.append(wList, (np.array([w1,w2,w3,w0]).T)/147440000, axis = 0)
+        wList = np.append(wList, (np.array([w1,w2,w3,w0]).T)/8800, axis = 0)
         
     
-        if i in range(1, 50000):
-            hf.visualizeZoom(robotId, i, 0, 5000, 5, 5, -70, -30) 
+        # if i in range(1, 50000):
+            # hf.visualizeZoom(robotId, i, 0, 5000, 5, 5, -70, -30) 
 
         # if i in range(1, 1000):
         #     hf.visualizeZoom(robotId, i, 0, 500, 10, 2)
@@ -190,70 +200,164 @@ if __name__ == "__main__":
         
         # if i in range(1900, 3000):
         #     hf.visualizeZoom(robotId, i, 1900, 200, 5, 5)
-# print("wList", wList[:,1])
+
+        p.resetDebugVisualizerCamera(20, 0, -5, [0,0,25]) # Camera position (distance, yaw, pitch, focuspoint)
+
+
+# Create time array in seconds
+timeArray = [0.0]*(simSteps+1)
+for t in range(0,simSteps+1):
+    timeArray[t] = t*timeStep
 
 # Commanded elevon 
-plt.figure(1)
-plt.plot(eList[:,0])
-plt.plot(eList[:,1])
-plt.plot(eList[:,2])
-plt.plot(eList[:,3])
+plt.figure(1, figsize=(14,5))
+e0, = plt.plot(timeArray, np.array(eList[:,3])*180/np.pi, label = "e0")
+# e1, = plt.plot(timeArray, np.array(eList[:,0])*180/np.pi, label = "e1")
+e2, = plt.plot(timeArray, np.array(eList[:,1])*180/np.pi, label = "e2")
+# e3, = plt.plot(timeArray, np.array(eList[:,2])*180/np.pi, label = "e3")
+plt.legend([e0, e2], ["Elevon 0 and 1 White and Red Section", "Elevon 2 and 3, Green and Blue Section"])
+plt.savefig('elevonDeflection.pdf')
+plt.grid(True)
+plt.xlabel("Time[s]")
+plt.ylabel("Elevon Deflection [deg]")
+plt.xticks(np.arange(0, simTime+.1, 1)) 
+plt.yticks(np.arange(-20, 20, 2)) 
 
-# Angular velocity on propellers
-plt.figure(2)
-plt.plot(wList[:,0])
-plt.plot(wList[:,1])
-plt.plot(wList[:,2])
-plt.plot(wList[:,3])
+########### Angular velocity on propellers
+plt.figure(2, figsize=(14,5))
+plt.grid(True)
+plt.xlabel("Time[s]")
+plt.ylabel("Motor [RPM]")
+plt.xticks(np.arange(0, simTime+.1, 1)) 
+plt.yticks(np.arange(0, 9000.1, 1000)) 
+m0, = plt.plot(timeArray, wList[:,3], 'k', label = "m0")
+m1, = plt.plot(timeArray, wList[:,0], 'r', label = "m1")
+m2, = plt.plot(timeArray, wList[:,1], 'g', label = "m2")
+m3, = plt.plot(timeArray, wList[:,2], 'b', label = "m3")
+plt.legend([m0, m1, m2, m3], ["Motor 0, White Section", "Motor 1, Red Section", "Motor 2, Green Section", "Motor 3, Blue Section"])
+plt.savefig('motorRPM.pdf')
 
-# print("wdTranspose", wdList[:,2][1:].T)
-# print("wdTransposeCon", np.concatenate(wdList[:,2][1:].T, axis = 0)[:,0])
-# # print("wdListagain", np.concatenate(wdList[:,1].T, axis = 0))
-# print("wdListagain", wdList0[1:,0])
+############# Power estimate model
+plt.figure(3, figsize=(14,5))
+plt.grid(True)
+plt.xlabel("Time[s]")
+plt.ylabel("Motor Power [W]")
+plt.xticks(np.arange(0, simTime+.1, 1)) 
+plt.yticks(np.arange(0, 1000.1, 100)) 
+powerM0 = hf.power_required_mt2814(wList[:,3])
+powerM1 = hf.power_required_mt2814(wList[:,0])
+powerM2 = hf.power_required_mt2814(wList[:,1])
+powerM3 = hf.power_required_mt2814(wList[:,2])
+totalPower = powerM0 + powerM1 + powerM2 + powerM3
+m0, = plt.plot(timeArray, powerM0, 'k', label = "m0")
+m1, = plt.plot(timeArray, powerM1, 'r', label = "m1")
+m2, = plt.plot(timeArray, powerM2, 'g', label = "m2")
+m3, = plt.plot(timeArray, powerM3, 'b', label = "m3")
+totalPower, = plt.plot(timeArray, totalPower, '--k', label = "totalPower")
+plt.legend([m0, m1, m2, m3, totalPower], ["Motor 0, White Section", "Motor 1, Red Section", "Motor 2, Green Section", "Motor 3, Blue Section", "Total Power"])
+plt.savefig('motorPower.pdf')
 
-print("wdList", wdList0[1:,0])
-# alphar
-plt.figure(3)
-plt.plot(wdList0[1:,0], 'k')
-plt.plot(wdList1[1:,0], 'r')
-plt.plot(wdList2[1:,0], 'g')
-plt.plot(wdList3[1:,0], 'b')
 
-# vNorm
-plt.figure(4)
-plt.plot(wdList0[1:,1], 'k')
-plt.plot(wdList1[1:,1], 'r')
-plt.plot(wdList2[1:,1], 'g')
-plt.plot(wdList3[1:,1], 'b')
 
-# Rel Fx
-plt.figure(5)
-plt.plot(wdList0[1:,4], 'k')
-plt.plot(wdList1[1:,4], 'r')
-plt.plot(wdList2[1:,4], 'g')
-plt.plot(wdList3[1:,4], 'b')
+# # alphar
+# plt.figure(4, figsize=(10,3))
+# plt.plot(wdList0[1:,0], 'k')
+# plt.plot(wdList1[1:,0], 'r')
+# plt.plot(wdList2[1:,0], 'g')
+# plt.plot(wdList3[1:,0], 'b')
 
-# Rel Fz
-plt.figure(6)
-plt.plot(wdList0[1:,5], 'k')
-plt.plot(wdList1[1:,5], 'r')
-plt.plot(wdList2[1:,5], 'g')
-plt.plot(wdList3[1:,5], 'b')
+# # vNorm
+# plt.figure(5, figsize=(10,3))
+# plt.plot(wdList0[1:,1], 'k')
+# plt.plot(wdList1[1:,1], 'r')
+# plt.plot(wdList2[1:,1], 'g')
+# plt.plot(wdList3[1:,1], 'b')
+
+# # Rel Fx
+# plt.figure(6, figsize=(10,3))
+# plt.plot(wdList0[1:,4], 'k')
+# plt.plot(wdList1[1:,4], 'r')
+# plt.plot(wdList2[1:,4], 'g')
+# plt.plot(wdList3[1:,4], 'b')
+
+# # Rel Fz
+# plt.figure(7, figsize=(10,3))
+# plt.plot(wdList0[1:,5], 'k')
+# plt.plot(wdList1[1:,5], 'r')
+# plt.plot(wdList2[1:,5], 'g')
+# plt.plot(wdList3[1:,5], 'b')
+
+# orientationWing : Roll, pitch, yaw
+plt.figure(8, figsize=(14,5))
+plt.grid(True)
+plt.xlabel("Time[s]")
+plt.ylabel("Angle [deg]")
+plt.xticks(np.arange(0, simTime+.1, 1)) 
+plt.yticks(np.arange(-50, 50, 5)) 
+roll, = plt.plot(timeArray[1:], np.array([x[0] for x in (wdList1[1:,6])])*180/np.pi, 'r', label = "roll") # Roll, so pythonic
+pitch, = plt.plot(timeArray[1:], np.array([x[1] for x in (wdList1[1:,6])])*180/np.pi, 'g', label = "pitch") # Pitch
+yaw, = plt.plot(timeArray[1:], np.array([x[2] for x in (wdList1[1:,6])])*180/np.pi, 'b', label = "yaw") # Yaw
+plt.legend([roll, pitch, yaw], ["Roll (Red Wing Section)", "Pitch (Red Wing Section)", "Yaw (Red Wing Section)"])
+plt.savefig('rollPitchYaw.pdf')
+
+# positionWing : x,y,z
+plt.figure(9, figsize=(14,5))
+plt.grid(True)
+plt.xlabel("Time[s]")
+plt.ylabel("Position [m]")
+plt.xticks(np.arange(0, simTime+.1, 1)) 
+plt.yticks(np.arange(-50, 50, 5)) 
+x, = plt.plot(timeArray[1:], np.array([x[0] for x in (wdList1[1:,7])]), 'r', label = "x") # x, 
+y, = plt.plot(timeArray[1:], np.array([x[1] for x in (wdList1[1:,7])]), 'g', label = "y") # y
+z, = plt.plot(timeArray[1:], np.array([x[2] for x in (wdList1[1:,7])]), 'b', label = "z") # z
+plt.legend([x, y, z], ["x", "y", "z"])
+plt.savefig('position.pdf')
+
+
+plt.figure(10, figsize=(14,5))
+plt.grid(True)
+plt.xlabel("Time[s]")
+plt.ylabel("Position [m]")
+# plt.xticks(np.arange(0, simTime+.1, 1)) 
+plt.xticks(np.arange(-20, 10, 10)) 
+plt.xlim([-20,10])
+plt.yticks(np.arange(0, 30, 5))
+plt.ylim([0,30])
+zPos = np.array([x[2] for x in (wdList1[1:,7])])
+xPos = np.array([x[0] for x in (wdList1[1:,7])])
+xPosition, = plt.plot(xPos, zPos, 'r', label = "x") # x, 
+# y, = plt.plot(timeArray[1:], np.array([x[1] for x in (wdList1[1:,7])]), 'g', label = "y") # y
+# z, = plt.plot(timeArray[1:], np.array([x[2] for x in (wdList1[1:,7])]), 'b', label = "z") # z
+# plt.legend([x, y, z], ["x", "y", "z"])
+plt.legend([xPosition], ["x"])
+plt.savefig('position.pdf')
 
 # Hinge Reaction torque
-plt.figure(7)
-plt.plot(hingeReactionList[:,0], 'k')
-plt.plot(hingeReactionList[:,1], 'r')
-plt.plot(hingeReactionList[:,2], 'g')
+# plt.figure(9, figsize=(10,3))
+# plt.plot(hingeReactionList[:,0], 'k')
+# plt.plot(hingeReactionList[:,1], 'r')
+# plt.plot(hingeReactionList[:,2], 'g')
 
 # Hinge torque
-plt.figure(8)
-plt.plot(hingeTorqueList[:,0], 'k')
-plt.plot(hingeTorqueList[:,1], 'r')
-plt.plot(hingeTorqueList[:,2], 'g')
+plt.figure(11, figsize=(14,5))
+h0, = plt.plot(timeArray, hingeTorqueList[:,0], 'k', label = "h0")
+h1, = plt.plot(timeArray, hingeTorqueList[:,1], 'r', label = "h1")
+h2, = plt.plot(timeArray, hingeTorqueList[:,2], 'g', label = "h2")
+plt.legend([h0, h1, h2], ["Hinge 0", "Hinge 1", "Hinge 2"])
+plt.savefig('hingeTorque.pdf')
+plt.grid(True)
+plt.xlabel("Time[s]")
+plt.ylabel("Hinge Torque [Nm]")
+plt.xticks(np.arange(0, simTime+.1, 1)) 
+plt.yticks(np.arange(-10, 50, 5)) 
+
+# Roll, pitch, yaw
+
 
 
 plt.show()
+# plt.savefig('figure1.pdf')
+
 
     # print("0 contents",recordedTestHinge[:][0])
     # while(1):

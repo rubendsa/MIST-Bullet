@@ -23,7 +23,7 @@
     </collision>
     
     <inertial>
-      <mass value=".82"/>
+      <mass value=".92"/>
       <!-- <origin rpy="0 0 0" xyz="-.003 .28 -.01"/> -->
       <origin rpy="0 0 0" xyz="-.003 .28 0"/>
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
@@ -52,7 +52,7 @@
     </collision>
     
     <inertial>
-      <mass value=".82"/>
+      <mass value=".92"/>
       <!-- <origin rpy="0 0 0" xyz="-.003 .28 -.01"/> -->
       <origin rpy="0 0 0" xyz="-.003 .28 0"/>
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
@@ -82,7 +82,7 @@
     </collision>
     
     <inertial>
-      <mass value=".82"/>
+      <mass value=".92"/>
       <!-- <origin rpy="0 0 0" xyz="-.003 .28 -.01"/> -->
       <origin rpy="0 0 0" xyz="-.003 .28 0"/>
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
@@ -111,7 +111,7 @@
     </collision>
     
     <inertial>
-      <mass value=".82"/>
+      <mass value=".92"/>
       <!-- <origin rpy="0 0 0" xyz="-.003 .28 -.01"/> -->
       <origin rpy="0 0 0" xyz="-.003 .28 0"/>
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
@@ -125,7 +125,7 @@
     <child link="link1"/>
     <origin rpy="0 0 0" xyz="0 .58 0"/>
     <!-- <limit effort="1" velocity="1" lower="0" upper="1.57079632679"/> -->
-    <limit effort="10000" velocity="10000" lower="-3.14" upper="3.14"/>
+    <limit effort="10000" velocity="10000" lower="-.5" upper="2"/>
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
@@ -135,7 +135,7 @@
     <child link="link2"/>
     <origin rpy="0 0 0" xyz="0 .58 0"/>
     <!-- <limit effort="1" velocity="1" lower="0" upper="1.57079632679"/> -->
-    <limit effort="10000" velocity="10000" lower="-3.14" upper="3.14"/>
+    <limit effort="10000" velocity="10000" lower="-.5" upper="2"/>
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
@@ -145,7 +145,7 @@
     <child link="link3"/>
     <origin rpy="0 0 0" xyz="0 .58 0"/>
     <!-- <limit effort="1" velocity="1" lower="0" upper="1.57079632679"/> -->
-    <limit effort="10000" velocity="10000" lower="-3.14" upper="3.14"/>
+    <limit effort="10000" velocity="10000" lower="-.5" upper="2"/>
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
 
@@ -279,8 +279,8 @@
     </visual>
     
     <inertial>
-      <mass value="0.02"/>
-      <inertia ixx="9.75e-07" ixy="0.0" ixz="0.0" iyy="0.000166704" iyz="0.0" izz="0.000167604"/>
+      <mass value=".02"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
 
@@ -297,8 +297,8 @@
     </visual>
     
     <inertial>
-      <mass value="0.02"/>
-      <inertia ixx="9.75e-07" ixy="0.0" ixz="0.0" iyy="0.000166704" iyz="0.0" izz="0.000167604"/>
+      <mass value=".02"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
 
@@ -316,8 +316,8 @@
     </visual>
     
     <inertial>
-      <mass value="0.02"/>
-      <inertia ixx="9.75e-07" ixy="0.0" ixz="0.0" iyy="0.000166704" iyz="0.0" izz="0.000167604"/>
+      <mass value=".02"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
 
@@ -336,8 +336,8 @@
     </visual>
     
     <inertial>
-      <mass value="0.02"/>
-      <inertia ixx="9.75e-07" ixy="0.0" ixz="0.0" iyy="0.000166704" iyz="0.0" izz="0.000167604"/>
+      <mass value=".02"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
 

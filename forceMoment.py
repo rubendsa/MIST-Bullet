@@ -19,14 +19,13 @@ def applyAction(actionVector, robotId, hingeIds, ctrlSurfIds, propIds):
     
     w0, w1, w2, w3, e0, e1, e2, e3, h0, h1, h2 = actionVector
 
-    # Kf = 1 # TODO: Put this in an object. 
-    # Km = .1
 
-    Kf = 2.02E-7
-    Km = 2.02E-8 # Roughly an order of magnitude less than kf. 
 
-    # Kf = 8.54858e-06
-    # Km = Kf * .06
+    # Kf = 2.0268E-7
+    # Km = 2.0268E-8 # Roughly an order of magnitude less than kf. 
+    
+    Kf = 2.0661E-7 # 770 KV
+    Km = 2.0661E-8
 
     Fm0 = Kf * w0 
     Fm1 = Kf * w1  
@@ -87,10 +86,10 @@ def applyAction(actionVector, robotId, hingeIds, ctrlSurfIds, propIds):
     vCtrl = p.VELOCITY_CONTROL
     pCtrl = p.POSITION_CONTROL
     # Visual of propeller spinning (not critical)
-    p.setJointMotorControl2(robotId, propIds[0], vCtrl, targetVelocity=w0*100, force=1000) 
-    p.setJointMotorControl2(robotId, propIds[1], vCtrl, targetVelocity=-w1*100, force=1000)
-    p.setJointMotorControl2(robotId, propIds[2], vCtrl, targetVelocity=w2*100, force=1000)
-    p.setJointMotorControl2(robotId, propIds[3], vCtrl, targetVelocity=-w3*100, force=1000)
+    p.setJointMotorControl2(robotId, propIds[0], vCtrl, targetVelocity=w0/7950, force=1000) 
+    p.setJointMotorControl2(robotId, propIds[1], vCtrl, targetVelocity=-w1/7950, force=1000)
+    p.setJointMotorControl2(robotId, propIds[2], vCtrl, targetVelocity=w2/7950, force=1000)
+    p.setJointMotorControl2(robotId, propIds[3], vCtrl, targetVelocity=-w3/7950, force=1000)
     
     # Control surface deflection [rads]
     p.setJointMotorControl2(robotId, ctrlSurfIds[0], pCtrl, targetPosition=2*e0, force=1000)
@@ -99,9 +98,12 @@ def applyAction(actionVector, robotId, hingeIds, ctrlSurfIds, propIds):
     p.setJointMotorControl2(robotId, ctrlSurfIds[3], pCtrl, targetPosition=2*e3, force=1000)
     
     # Hinge angle [rads]
-    p.setJointMotorControl2(robotId, hingeIds[0], pCtrl, targetPosition=h0, maxVelocity=4, force=10000)
-    p.setJointMotorControl2(robotId, hingeIds[1], pCtrl, targetPosition=h1, maxVelocity=4, force=10000)
-    p.setJointMotorControl2(robotId, hingeIds[2], pCtrl, targetPosition=h2, maxVelocity=4, force=10000)
+    hingePGain = .01
+    hingeDGain = 1
+    hingeForce = 44
+    p.setJointMotorControl2(robotId, hingeIds[0], pCtrl, targetPosition=h0, positionGain = hingePGain, velocityGain = hingeDGain,force=hingeForce)
+    p.setJointMotorControl2(robotId, hingeIds[1], pCtrl, targetPosition=h1, positionGain = hingePGain, velocityGain = hingeDGain,force=hingeForce)
+    p.setJointMotorControl2(robotId, hingeIds[2], pCtrl, targetPosition=h2, positionGain = hingePGain, velocityGain = hingeDGain,force=hingeForce)
 
 
 

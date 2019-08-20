@@ -20,11 +20,16 @@ def calcFreeStreamVelocity(robotId, wingId):
         # listMat = p.getMatrixFromQuaternion(np.array(p.getBasePositionAndOrientation(robotId)[1]))
         # vA = np.array(p.getLinkState(robotId, wingId, 1)[6]) # Calculate Air-relative velocity vector Va
         vA = np.array(p.getBaseVelocity(robotId)[0]) # Get linear velocity in cartesian world
-        listMat = p.getMatrixFromQuaternion(p.getBasePositionAndOrientation(robotId)[1])
+        poseWing = p.getBasePositionAndOrientation(robotId)[0:2]
+        orientationWing = p.getEulerFromQuaternion(poseWing[1])
+        listMat = p.getMatrixFromQuaternion(poseWing[1])
+        
     else:
         vA = np.array(p.getLinkState(robotId, wingId, 1)[6]) # Calculate Air-relative velocity vector Va
-        listMat = p.getMatrixFromQuaternion(p.getLinkState(robotId, wingId, 1)[1])
-
+        poseWing = p.getLinkState(robotId, wingId, 1)[0:2]
+        orientationWing = p.getEulerFromQuaternion(poseWing[1])
+        listMat = p.getMatrixFromQuaternion(poseWing[1])
+        
     rotWtoB = np.array([[listMat[0], listMat[1], listMat[2]],
                         [listMat[3], listMat[4], listMat[5]],
                         [listMat[6], listMat[7], listMat[8]]])
@@ -34,7 +39,7 @@ def calcFreeStreamVelocity(robotId, wingId):
     alphar = math.atan2(vABody[0],abs(vABody[2])) # Angle of attack in radians. Axis rotated 90 about y. Z is the old X, X is the old Z 
     betar = math.asin(vABody[1]/vNorm) # Side-slip angle - DOUBLE CHECK COORDINATE FRAME N.E.D. VS N.W.U.
 
-    return vA, vABody, vNorm, alphar, betar
+    return vA, vABody, vNorm, alphar, betar, orientationWing, poseWing[0]
 
 def mh49Aero(robotId, wingId):
     alphaRTable, cLTable, cDTable, cMTable = hf.readAeroData("T1_Re0.100_M0.00_N9.0.txt") # Read aero data from file
@@ -46,7 +51,7 @@ def mh49Aero(robotId, wingId):
     
 
 def simpleAero(robotId, wingId):
-    vA, vABody, vNorm, alphar, betar = calcFreeStreamVelocity(robotId, wingId)
+    vA, vABody, vNorm, alphar, betar, orientationWing, positionWing = calcFreeStreamVelocity(robotId, wingId)
 
     ###### Approach 1
     # cLAlpha = .0875 * 180/3.1415 # slope of CL/alpha
@@ -77,7 +82,7 @@ def wingDynamics(robotId, wingId):
     sArea = 0.634/4 # area in m^2 from Xflr5
     rho = 1.225 # kg/m^3 International Standard Atmosphere air density
     
-    vA, vABody, vNorm, alphar, betar = calcFreeStreamVelocity(robotId, wingId)
+    vA, vABody, vNorm, alphar, betar, orientationWing, positionWing = calcFreeStreamVelocity(robotId, wingId)
 
     cL, cD, cM = simpleAero(robotId, wingId)
 
@@ -109,4 +114,4 @@ def wingDynamics(robotId, wingId):
     
 
 
-    return alphar, vNorm, FRel.T, M, LA.norm(FRelx), LA.norm(FRelz)
+    return alphar, vNorm, FRel.T, M, LA.norm(FRelx), LA.norm(FRelz), orientationWing, positionWing
