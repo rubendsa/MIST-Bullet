@@ -33,8 +33,8 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
 
     K_position = 1 * K_position
     K_velocity = 3 * K_velocity
-    K_rotation = 3 * K_rotation
-    K_angularVelocity = 3 * K_angularVelocity
+    K_rotation = 4 * K_rotation
+    K_angularVelocity = 5 * K_angularVelocity
 
     # K_position = 1 * K_position
     # K_velocity = 1 * K_velocity
@@ -109,8 +109,8 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
     des_R = np.concatenate((des_xB, des_yB, des_zB), axis = 0).T
 
     # Apply roll and pitch limits 
-    tiltMax = 15 # Max tilt in degrees
-    tiltMaxR = tiltMax*3.1415/180
+    tiltMax = 25 # Max tilt in degrees
+    tiltMaxR = tiltMax*np.pi/180
     roll, pitch, yaw = hf.rotationMatrixToEulerAngles(des_R.T)
     if abs(roll) > tiltMaxR:
         roll = np.sign(roll)*tiltMaxR
@@ -170,10 +170,10 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
 
     # geoTailSitterCtrlSurf: used for computing elevon angles "e" from the general actuation effort "u" 
     geoTailSitterCtrlSurf = np.array([
+        [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)],
         [ 0,    0,    1/(2*Kf*L),     1/(4*Km)],
-        [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)],
-        [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)],
-        [ 0,    0,    1/(2*Kf*L),     1/(4*Km)]])
+        [ 0,    0,    1/(2*Kf*L),     1/(4*Km)],
+        [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)]])
         
     # w2Limit = 63202500 #7950RPM
     w2Limit = 77440000 #8800RPM
@@ -193,7 +193,7 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
         e = geoTailSitterCtrlSurf @ u
         eNorm = e / w2Limit
         e = eNorm #Normalize the output because it was designed for propulsion system (omega^2, not elevon deflection)
-        # e = np.clip(e, -.5, .5)
+        e = np.clip(e, -.8, .8)
 
     if frameState == "quadrotor":
         w2 = LA.inv(geo) @ u

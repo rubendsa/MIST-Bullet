@@ -156,7 +156,7 @@
 <!--                              control surface 0                       -->
   <link name="ctrlsurf0">
     <visual name='ctrlsurf0_visual'>
-        <origin rpy="0 0 0" xyz="0.0 .28 -.05"/>
+        <origin rpy="0 0 0" xyz="0.0 0 -.05"/>
 
         <geometry>
             <mesh filename="package://meshes/mist_controlsurface.STL" scale="0.001 0.001 0.001"/>
@@ -176,7 +176,7 @@
   <!--                              control surface 1                       -->
   <link name="ctrlsurf1">
     <visual name='ctrlsurf1_visual'>
-        <origin rpy="0 0 0" xyz="0.0 .28 -.05"/>
+        <origin rpy="0 0 0" xyz="0.0 0 -.05"/>
 
         <geometry>
             <mesh filename="package://meshes/mist_controlsurface.STL" scale="0.001 0.001 0.001"/>
@@ -195,7 +195,7 @@
   <!--                              control surface 2                       -->
   <link name="ctrlsurf2">
     <visual name='ctrlsurf2_visual'>
-        <origin rpy="0 0 0" xyz="0.0 .28 -.05"/>
+        <origin rpy="0 0 0" xyz="0.0 0 -.05"/>
 
         <geometry>
             <mesh filename="package://meshes/mist_controlsurface.STL" scale="0.001 0.001 0.001"/>
@@ -214,7 +214,7 @@
   <!--                              control surface 3                       -->
   <link name="ctrlsurf3">
     <visual name='ctrlsurf3_visual'>
-        <origin rpy="0 0 0" xyz="0.0 .28 -.05"/>
+        <origin rpy="0 0 0" xyz="0.0 0 -.05"/>
 
         <geometry>
             <mesh filename="package://meshes/mist_controlsurface.STL" scale="0.001 0.001 0.001"/>
@@ -233,7 +233,7 @@
     <axis xyz="0 1 0"/>
     <parent link="link0"/>
     <child link="ctrlsurf0"/>
-    <origin rpy="0 0 0" xyz="-.003 0 -.08"/>
+    <origin rpy="0 0 0" xyz="-.003 .28 -.08"/>
     <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/>
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
@@ -242,7 +242,7 @@
     <axis xyz="0 1 0"/>
     <parent link="link1"/>
     <child link="ctrlsurf1"/>
-    <origin rpy="0 0 0" xyz="-.003 0 -.08"/>
+    <origin rpy="0 0 0" xyz="-.003 .28 -.08"/>
     <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/>
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
@@ -252,7 +252,7 @@
     <axis xyz="0 1 0"/>
     <parent link="link2"/>
     <child link="ctrlsurf2"/>
-    <origin rpy="0 0 0" xyz="-.003 0 -.08"/>
+    <origin rpy="0 0 0" xyz="-.003 .28 -.08"/>
     <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/>
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>
@@ -261,7 +261,7 @@
     <axis xyz="0 1 0"/>
     <parent link="link3"/>
     <child link="ctrlsurf3"/>
-    <origin rpy="0 0 0" xyz="-.003 0 -.08"/>
+    <origin rpy="0 0 0" xyz="-.003 .28 -.08"/>
     <limit effort="1" velocity="1" lower="-1.57079632679" upper="1.57079632679"/>
     <joint_properties damping="1.0" friction="0.0"/>
   </joint>

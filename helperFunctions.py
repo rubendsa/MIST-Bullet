@@ -18,7 +18,7 @@ def rotY(angle):
 
 def readAeroData(fileName):
     lines = loadtxt(fileName, unpack=False, skiprows=11)
-    alphaRTable = lines[:,0]*3.1415/180
+    alphaRTable = lines[:,0]*np.pi/180
     cLTable = lines[:,1]
     cDTable = lines[:,2]
     cMTable = lines[:,4]

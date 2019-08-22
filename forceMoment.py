@@ -58,6 +58,7 @@ def applyAction(actionVector, robotId, hingeIds, ctrlSurfIds, propIds):
     eM_1 = 1*(.1*(e1 * Fm1) + .1*(e1 * vNorm1))
     eM_2 = 1*(.1*(e2 * Fm2) + .1*(e2 * vNorm2))
     eM_3 = 1*(.1*(e3 * Fm3) + .1*(e3 * vNorm3))
+
     # eM_0 = 30*e0
     # eM_1 = 30*e1
     # eM_2 = 30*e2
@@ -68,7 +69,7 @@ def applyAction(actionVector, robotId, hingeIds, ctrlSurfIds, propIds):
     p.applyExternalTorque(robotId, 1, [0,eM_2,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
     p.applyExternalTorque(robotId, 2, [0,eM_3,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
     # The difference in elevons induces a torque in the z axis for tailsitter. 
-    p.applyExternalTorque(robotId, -1, [0,0,(eM_0+eM_1-eM_2-eM_3)], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+    p.applyExternalTorque(robotId, -1, [0,0,(-eM_0-eM_1+eM_2+eM_3)], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
     
     # p.applyExternalTorque(robotId, -1, [0,30*e0,0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
     # p.applyExternalTorque(robotId, 0, [0,30*e1,0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
@@ -86,16 +87,16 @@ def applyAction(actionVector, robotId, hingeIds, ctrlSurfIds, propIds):
     vCtrl = p.VELOCITY_CONTROL
     pCtrl = p.POSITION_CONTROL
     # Visual of propeller spinning (not critical)
-    p.setJointMotorControl2(robotId, propIds[0], vCtrl, targetVelocity=w0/7950, force=1000) 
-    p.setJointMotorControl2(robotId, propIds[1], vCtrl, targetVelocity=-w1/7950, force=1000)
-    p.setJointMotorControl2(robotId, propIds[2], vCtrl, targetVelocity=w2/7950, force=1000)
-    p.setJointMotorControl2(robotId, propIds[3], vCtrl, targetVelocity=-w3/7950, force=1000)
+    p.setJointMotorControl2(robotId, propIds[0], vCtrl, targetVelocity=w0/8800, force=1000) 
+    p.setJointMotorControl2(robotId, propIds[1], vCtrl, targetVelocity=-w1/8800, force=1000)
+    p.setJointMotorControl2(robotId, propIds[2], vCtrl, targetVelocity=w2/8800, force=1000)
+    p.setJointMotorControl2(robotId, propIds[3], vCtrl, targetVelocity=-w3/8800, force=1000)
     
     # Control surface deflection [rads]
-    p.setJointMotorControl2(robotId, ctrlSurfIds[0], pCtrl, targetPosition=2*e0, force=1000)
-    p.setJointMotorControl2(robotId, ctrlSurfIds[1], pCtrl, targetPosition=2*e1, force=1000)
-    p.setJointMotorControl2(robotId, ctrlSurfIds[2], pCtrl, targetPosition=2*e2, force=1000)
-    p.setJointMotorControl2(robotId, ctrlSurfIds[3], pCtrl, targetPosition=2*e3, force=1000)
+    p.setJointMotorControl2(robotId, ctrlSurfIds[0], pCtrl, targetPosition=-e0, force=1000)
+    p.setJointMotorControl2(robotId, ctrlSurfIds[1], pCtrl, targetPosition=-e1, force=1000)
+    p.setJointMotorControl2(robotId, ctrlSurfIds[2], pCtrl, targetPosition=-e2, force=1000)
+    p.setJointMotorControl2(robotId, ctrlSurfIds[3], pCtrl, targetPosition=-e3, force=1000)
     
     # Hinge angle [rads]
     hingePGain = .01
