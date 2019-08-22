@@ -97,7 +97,7 @@ class PyBulletInstance():
         self.client.applyExternalForce(self.robotID, 2, [0,0, Fm3], [0,0,0], 1) #Apply m3 force[N] on link3, w.r.t. local frame
 
         # Torque for each Motor
-        self.client.applyExternalTorque(self.robotID, -1, [0,0, -Mm0], 1) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
+        self.client.applyExternalTorque(self.robotID, -1, [0,0, -Mm0], 2) #Torque is assumed to be 1/4 thrust TODO: Update with 2nd order motor model. 
         self.client.applyExternalTorque(self.robotID, 0, [0,0, Mm1], 1) 
         self.client.applyExternalTorque(self.robotID, 1, [0,0, -Mm2], 1) 
         self.client.applyExternalTorque(self.robotID, 2, [0,0, Mm3], 1) 
@@ -128,16 +128,18 @@ class PyBulletInstance():
         # position = e # x,y,z
         position = self.computeCenterOfMass()
         orientation = f #Quaternion
+        rot_matrix = self.client.getMatrixFromQuaternion(orientation)
         velocity = g 
         angular_velocity = h
-        return position, orientation, velocity, angular_velocity 
+        return rot_matrix, position, angular_velocity, velocity
+        # return position, orientation, velocity, angular_velocity 
     
     def getState(self):
         """
         Conglomerates state into a 1D vector for convenience
         """
-        p, o, v, a_v = self.getUAVState()
-        return np.array([*p, *o, *v, *a_v])
+        r, p, v, a_v = self.getUAVState()
+        return np.array([*r, *p, *v, *a_v])
 
     def computeCenterOfMass(self):
         """
