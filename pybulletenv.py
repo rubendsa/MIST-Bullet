@@ -8,9 +8,9 @@ import gym
 from gym import error, spaces
 import utils 
 
-'''
+"""
 Gym Compatible
-'''
+"""
 class PyBulletEnvironment(gym.Env):
 
     def __init__(self, GUI=False):
@@ -29,22 +29,8 @@ class PyBulletEnvironment(gym.Env):
         self.ctrlSurfIDs = [9, 7, 5, 3]
         self.propIDs = [10, 8, 6, 4]
 
-        self.action_space = spaces.Box(-np.inf, np.inf, shape=(4,), dtype=np.float32)
+        self.action_space = spaces.Box(0, 17, shape=(4,), dtype=np.float32)
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(18,), dtype=np.float32)
-
-    # @property
-    # def action_space(self):
-    #     """
-    #     Returns a Space object
-    #     """
-    #     raise self.action_space
-
-    # @property
-    # def observation_space(self):
-    #     """
-    #     Returns a Space object
-    #     """
-    #     raise self.observation_space
 
     def set_hinge_pos(self, hinge_pos):
         hinge_f = 100
@@ -66,7 +52,7 @@ class PyBulletEnvironment(gym.Env):
 
     def sim_step(self, action):
         w = action[0:4]
-        # c = action[4:8]
+        # c = action[4:8] #change this if you want to make these learned 
         # h = action[8:]
         c = [0, 0, 0, 0]
         h = [1.57, 1.57, 1.57]
@@ -79,16 +65,6 @@ class PyBulletEnvironment(gym.Env):
         Mm[0] *= -1
         Mm[2] *= -1
 
-        # Fm0 = Kf * w[0]
-        # Fm1 = Kf * w[1]  
-        # Fm2 = Kf * w[2] 
-        # Fm3 = Kf * w[3]
-        # Mm0 = Km * w[0]
-        # Mm1 = Km * w[1]
-        # Mm2 = Km * w[2]
-        # Mm3 = Km * w[3]
-
-
         for link_idx in range(-1, 3):
             action_idx = link_idx + 1
             #Thrust
@@ -99,7 +75,7 @@ class PyBulletEnvironment(gym.Env):
             else:
                 self.bc.applyExternalTorque(self.robotID, link_idx, [0, 0, Mm[action_idx]], 1)
             #Propeller visual (non critical)
-            self.bc.setJointMotorControl2(self.robotID, self.propIDs[action_idx], self.bc.VELOCITY_CONTROL, targetVelocity=w[action_idx]*10, force=1000)
+            self.bc.setJointMotorControl2(self.robotID, self.propIDs[action_idx], self.bc.VELOCITY_CONTROL, targetVelocity=w[action_idx]/17, force=1000)
             #Control surface deflection [rads]
             self.bc.setJointMotorControl2(self.robotID, self.ctrlSurfIDs[action_idx], self.bc.POSITION_CONTROL, targetPosition=c[action_idx], force=1000)
             #Hinge Angle

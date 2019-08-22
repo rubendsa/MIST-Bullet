@@ -23,7 +23,7 @@ def quadrotor_action_mod(a):
     Clips the action and sets joints to quadrotor-only
     """
     #previously had action scale, TODO decide if removal is bad
-    a = [clip(x, 17) for x in a]
+    a = [clip(x, min_clip=0, max_clip=17) for x in a]
     a = np.concatenate((a, [0, 0, 0, 0, 1.57, 1.57, 1.57]))
     return a
 
@@ -116,14 +116,14 @@ def combined_shape(length, shape=None):
 #               #
 #################
 
-def clip(val, clip_val):
+def clip(val, *, min_clip, max_clip):
     """
     Clips a value to be in range [-clip_val, clip_val]
     """
-    if val < -clip_val:
-        val = -clip_val
-    elif val > clip_val:
-        val = clip_val 
+    if val < min_clip:
+        val = min_clip
+    elif val > max_clip:
+        val = max_clip 
     return val
 
 class ProgressBar():
