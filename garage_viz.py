@@ -1,21 +1,19 @@
-from garage.experiment import run_experiment 
-from garage.tf.experiment import LocalTFRunner 
-from garage.tf.envs import TfEnv
+import tensorflow as tf
+import joblib 
 
-from pybulletenv import PyBulletEnvironment 
+from pybulletenv import PyBulletEnvironment
 
-res_dir = "/home/deanx252/Research/MIST-Bullet/data/local/experiment/experiment_2019_08_20_16_42_16_0,001"
+fn = "./data/local/experiment/experiment_2019_08_22_17_19_15_0,001/params.pkl"
 
-def run_task(snapshot_config, *_):
-    with LocalTFRunner(snapshot_config=snapshot_config) as runner:
-        env = TfEnv(PyBulletEnvironment(GUI=True))
-        runner.env = env
-        runner.restore(from_dir=res_dir)
-        runner.resume()
+env = PyBulletEnvironment(GUI=True)
+obs = env.reset()
 
-run_experiment(
-    run_task,
-    python_command="python3",
-    snapshot_mode='last',
-    seed=1
-)
+with tf.compat.v1.Session() as sess:
+    data = joblib.load(fn)
+    policy = data['algo'].policy
+    
+    for t in range(100000):
+        action = policy.get_action(obs)
+
+        obs, _, _, _ = env.step(action)
+    
