@@ -5,8 +5,21 @@
         "pybullet"
     ],
     "workbench.colorCustomizations": {
-        "activityBar.background": "#2D0E8A",
-        "titleBar.activeBackground": "#3E13C1",
-        "titleBar.activeForeground": "#FDFCFF"
-    }
+        "activityBar.background": "#2d0e8a",
+        "activityBar.foreground": "#e7e7e7",
+        "activityBar.inactiveForeground": "#e7e7e799",
+        "activityBarBadge.background": "#ae3912",
+        "activityBarBadge.foreground": "#e7e7e7",
+        "titleBar.activeBackground": "#1e095c",
+        "titleBar.inactiveBackground": "#1e095c99",
+        "titleBar.activeForeground": "#e7e7e7",
+        "titleBar.inactiveForeground": "#e7e7e799",
+        "statusBar.background": "#1e095c",
+        "statusBarItem.hoverBackground": "#2d0e8a",
+        "statusBar.foreground": "#e7e7e7",
+        "panel.border": "#2d0e8a",
+        "sideBar.border": "#2d0e8a",
+        "editorGroup.border": "#2d0e8a"
+    },
+    "peacock.color": "#1e095c"
 }

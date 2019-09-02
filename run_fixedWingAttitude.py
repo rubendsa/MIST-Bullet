@@ -13,8 +13,10 @@ import forceMoment as fm
 import controllers as ctrl
 import record
 import helperFunctions as hf
+import sys
+import os
 
-
+plotting = True
 
 ########## START UNCOMMENT FOR WINDOWS ###########
 # from ctypes import windll #new
@@ -52,7 +54,7 @@ if __name__ == "__main__":
     timeStep = .001
     ctrlTimeStep = .001 
 
-    simTime = 15 # Sim time in [s]
+    simTime = 10 # Sim time in [s]
     simSteps = int(simTime/timeStep)
     ctrlStep = int(ctrlTimeStep/timeStep)
     ctrlUpdateStep = 0
@@ -213,221 +215,221 @@ if __name__ == "__main__":
 
         # p.resetDebugVisualizerCamera(15, -45, -10, [-10,0,25]) # Camera position (distance, yaw, pitch, focuspoint)
 
+if plotting==True:
+    # Create time array in seconds
+    timeArray = [0.0]*(simSteps+1)
+    for t in range(0,simSteps+1):
+        timeArray[t] = t*timeStep
 
-# Create time array in seconds
-timeArray = [0.0]*(simSteps+1)
-for t in range(0,simSteps+1):
-    timeArray[t] = t*timeStep
+    # Commanded elevon 
+    figWidth = 10
+    figHeight = 2
+    plt.figure(1, figsize=(figWidth, figHeight))
+    e0, = plt.plot(timeArray, np.array(eList[:,3])*180/np.pi, label = "e0")
+    # e1, = plt.plot(timeArray, np.array(eList[:,0])*180/np.pi, label = "e1")
+    e2, = plt.plot(timeArray, np.array(eList[:,1])*180/np.pi, label = "e2")
+    # e3, = plt.plot(timeArray, np.array(eList[:,2])*180/np.pi, label = "e3")
+    plt.legend([e0, e2], ["Elevon 0 and 1 White and Red Section", "Elevon 2 and 3, Green and Blue Section"])
+    plt.savefig('elevonDeflection.pdf')
+    plt.grid(True)
+    plt.xlabel("Time[s]")
+    plt.ylabel("Elevon Deflection [deg]")
+    plt.xticks(np.arange(0, simTime+.1, 1)) 
+    plt.yticks(np.arange(-50, 50, 10)) 
+    plt.tight_layout()
+    plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'commandedElevon.pdf')
 
-# Commanded elevon 
-figWidth = 10
-figHeight = 2
-plt.figure(1, figsize=(figWidth, figHeight))
-e0, = plt.plot(timeArray, np.array(eList[:,3])*180/np.pi, label = "e0")
-# e1, = plt.plot(timeArray, np.array(eList[:,0])*180/np.pi, label = "e1")
-e2, = plt.plot(timeArray, np.array(eList[:,1])*180/np.pi, label = "e2")
-# e3, = plt.plot(timeArray, np.array(eList[:,2])*180/np.pi, label = "e3")
-plt.legend([e0, e2], ["Elevon 0 and 1 White and Red Section", "Elevon 2 and 3, Green and Blue Section"])
-plt.savefig('elevonDeflection.pdf')
-plt.grid(True)
-plt.xlabel("Time[s]")
-plt.ylabel("Elevon Deflection [deg]")
-plt.xticks(np.arange(0, simTime+.1, 1)) 
-plt.yticks(np.arange(-50, 50, 10)) 
-plt.tight_layout()
-plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'commandedElevon.pdf')
+    ########### Angular velocity on propellers
+    plt.figure(2, figsize=(figWidth, figHeight))
+    plt.grid(True)
+    plt.xlabel("Time[s]")
+    plt.ylabel("Motor [RPM]")
+    plt.xticks(np.arange(0, simTime+.1, 1)) 
+    plt.yticks(np.arange(0, 9000.1, 1000)) 
+    m0, = plt.plot(timeArray, wList[:,3], 'k', label = "m0")
+    m1, = plt.plot(timeArray, wList[:,0], 'r', label = "m1")
+    m2, = plt.plot(timeArray, wList[:,1], 'g', label = "m2")
+    m3, = plt.plot(timeArray, wList[:,2], 'b', label = "m3")
+    plt.legend([m0, m1, m2, m3], ["Motor 0, White Section", "Motor 1, Red Section", "Motor 2, Green Section", "Motor 3, Blue Section"])
+    plt.tight_layout()
+    plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'motorRPM.pdf')
 
-########### Angular velocity on propellers
-plt.figure(2, figsize=(figWidth, figHeight))
-plt.grid(True)
-plt.xlabel("Time[s]")
-plt.ylabel("Motor [RPM]")
-plt.xticks(np.arange(0, simTime+.1, 1)) 
-plt.yticks(np.arange(0, 9000.1, 1000)) 
-m0, = plt.plot(timeArray, wList[:,3], 'k', label = "m0")
-m1, = plt.plot(timeArray, wList[:,0], 'r', label = "m1")
-m2, = plt.plot(timeArray, wList[:,1], 'g', label = "m2")
-m3, = plt.plot(timeArray, wList[:,2], 'b', label = "m3")
-plt.legend([m0, m1, m2, m3], ["Motor 0, White Section", "Motor 1, Red Section", "Motor 2, Green Section", "Motor 3, Blue Section"])
-plt.tight_layout()
-plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'motorRPM.pdf')
-
-############# Power estimate model
-plt.figure(3, figsize=(figWidth, figHeight))
-plt.grid(True)
-plt.xlabel("Time[s]")
-plt.ylabel("Motor Power [W]")
-plt.xticks(np.arange(0, simTime+.1, 1)) 
-plt.yticks(np.arange(0, 1500.1, 150)) 
-powerM0 = hf.power_required_mt2814(wList[:,3])
-powerM1 = hf.power_required_mt2814(wList[:,0])
-powerM2 = hf.power_required_mt2814(wList[:,1])
-powerM3 = hf.power_required_mt2814(wList[:,2])
-totalPower = powerM0 + powerM1 + powerM2 + powerM3
-m0, = plt.plot(timeArray, powerM0, 'k', label = "m0")
-m1, = plt.plot(timeArray, powerM1, 'r', label = "m1")
-m2, = plt.plot(timeArray, powerM2, 'g', label = "m2")
-m3, = plt.plot(timeArray, powerM3, 'b', label = "m3")
-totalPower, = plt.plot(timeArray, totalPower, '--k', label = "totalPower")
-plt.legend([m0, m1, m2, m3, totalPower], ["Motor 0, White Section", "Motor 1, Red Section", "Motor 2, Green Section", "Motor 3, Blue Section", "Total Power"])
-plt.tight_layout()
-plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'motorPower.pdf')
-
-
-
-# alphar
-plt.figure(4, figsize=(figWidth, figHeight))
-# plt.title("alphar")
-plt.grid(True)
-plt.xlabel("Time[s]")
-plt.ylabel("Force [N]")
-plt.xticks(np.arange(0, simTime+.1, 1)) 
-plt.yticks(np.arange(-100, 100, 20)) 
-plt.ylim([-100,100])
-wing0, = plt.plot(timeArray, np.array(wdList0[0:,0])*180/np.pi, 'k', label = "wing0")
-wing1, = plt.plot(timeArray, np.array(wdList1[0:,0])*180/np.pi, 'r', label = "wing1")
-wing2, = plt.plot(timeArray, np.array(wdList2[0:,0])*180/np.pi, 'g', label = "wing2")
-wing3, = plt.plot(timeArray, np.array(wdList3[0:,0])*180/np.pi, 'b', label = "wing3")
-plt.legend([wing0, wing1, wing2, wing3], ["Wing 0, White Section", "Wing 1, Red Section", "Wing 2, Green Section", "Wing 3, Blue Section"])
-plt.tight_layout()
-plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'alphar.pdf')
-
-# vNorm
-
-plt.figure(5, figsize=(figWidth, figHeight))
-# plt.title("vNorm")
-plt.grid(True)
-plt.xlabel("Time[s]")
-plt.ylabel("Velocity [m/s]")
-plt.xticks(np.arange(0, simTime+.1, 1)) 
-plt.yticks(np.arange(0, 20, 2)) 
-plt.ylim([0,20])
-wing0, = plt.plot(timeArray, wdList0[0:,1], 'k', label = "wing0")
-wing1, = plt.plot(timeArray, wdList1[0:,1], 'r', label = "wing1")
-wing2, = plt.plot(timeArray, wdList2[0:,1], 'g', label = "wing2")
-wing3, = plt.plot(timeArray, wdList3[0:,1], 'b', label = "wing3")
-plt.legend([wing0, wing1, wing2, wing3], ["Wing 0, White Section", "Wing 1, Red Section", "Wing 2, Green Section", "Wing 3, Blue Section"])
-plt.tight_layout()
-plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'vNorm.pdf')
-
-# Rel Fx
-plt.figure(6, figsize=(figWidth, figHeight))
-# plt.title("Fx")
-plt.grid(True)
-plt.xlabel("Time[s]")
-plt.ylabel("Force [N]")
-plt.xticks(np.arange(0, simTime+.1, 1)) 
-# plt.yticks(np.arange(0, 18, 2)) 
-# plt.ylim([0,18])
-plt.yticks(np.arange(0, 12, 2)) 
-plt.ylim([0,12])
-wing0, = plt.plot(timeArray, wdList0[0:,4], 'k', label = "wing0")
-wing1, = plt.plot(timeArray, wdList1[0:,4], 'r', label = "wing1")
-wing2, = plt.plot(timeArray, wdList2[0:,4], 'g', label = "wing2")
-wing3, = plt.plot(timeArray, wdList3[0:,4], 'b', label = "wing3")
-plt.legend([wing0, wing1, wing2, wing3], ["Wing 0, White Section", "Wing 1, Red Section", "Wing 2, Green Section", "Wing 3, Blue Section"])
-plt.tight_layout()
-plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'fx.pdf')
-
-
-# Rel Fz
-plt.figure(7, figsize=(figWidth, figHeight))
-# plt.title("Fz")
-plt.grid(True)
-plt.xlabel("Time[s]")
-plt.ylabel("Force [N]")
-plt.xticks(np.arange(0, simTime+.1, 1)) 
-# plt.yticks(np.arange(0, 3.1, .5)) 
-# plt.ylim([0,3])
-plt.yticks(np.arange(0, 30, 5)) 
-plt.ylim([0,30])
-wing0, = plt.plot(timeArray, wdList0[0:,5], 'k', label = "wing0")
-wing1, = plt.plot(timeArray, wdList1[0:,5], 'r', label = "wing1")
-wing2, = plt.plot(timeArray, wdList2[0:,5], 'g', label = "wing2")
-wing3, = plt.plot(timeArray, wdList3[0:,5], 'b', label = "wing3")
-plt.legend([wing0, wing1, wing2, wing3], ["Wing 0, White Section", "Wing 1, Red Section", "Wing 2, Green Section", "Wing 3, Blue Section"])
-plt.tight_layout()
-plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'fz.pdf')
-
-# orientationWing : Roll, pitch, yaw
-plt.figure(8, figsize=(figWidth, figHeight))
-plt.grid(True)
-plt.xlabel("Time[s]")
-plt.ylabel("Angle [deg]")
-plt.xticks(np.arange(0, simTime+.1, 1)) 
-plt.yticks(np.arange(-200, 200, 40)) 
-plt.ylim([-200,200])
-roll, = plt.plot(timeArray[1:], np.array([x[0] for x in (wdList1[1:,6])])*180/np.pi, 'r', label = "roll") # Roll, so pythonic
-pitch, = plt.plot(timeArray[1:], np.array([x[1] for x in (wdList1[1:,6])])*180/np.pi, 'g', label = "pitch") # Pitch
-yaw, = plt.plot(timeArray[1:], np.array([x[2] for x in (wdList1[1:,6])])*180/np.pi, 'b', label = "yaw") # Yaw
-plt.legend([roll, pitch, yaw], ["Roll (Red Wing Section)", "Pitch (Red Wing Section)", "Yaw (Red Wing Section)"])
-plt.tight_layout()
-plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'rollPitchYaw.pdf')
-
-
-# positionWing : x,y,z
-plt.figure(9, figsize=(figWidth, figHeight))
-plt.grid(True)
-plt.xlabel("Time[s]")
-plt.ylabel("Position [m]")
-plt.xticks(np.arange(0, simTime+.1, 1)) 
-plt.yticks(np.arange(-5, 200, 20)) 
-plt.ylim([-5,200])
-x, = plt.plot(timeArray[1:], np.array([x[0] for x in (wdList1[1:,7])]), 'r', label = "x") # x, 
-y, = plt.plot(timeArray[1:], np.array([x[1] for x in (wdList1[1:,7])]), 'g', label = "y") # y
-z, = plt.plot(timeArray[1:], np.array([x[2] for x in (wdList1[1:,7])]), 'b', label = "z") # z
-plt.legend([x, y, z], ["x", "y", "z"])
-plt.tight_layout()
-plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'position.pdf')
-
-
-plt.figure(10, figsize=(figWidth, figHeight))
-plt.grid(True)
-plt.xlabel("X [m]")
-plt.ylabel("Z [m]")
-# plt.xticks(np.arange(0, simTime+.1, 1)) 
-plt.xticks(np.arange(-20, 10, 2)) 
-plt.xlim([-20,10])
-plt.yticks(np.arange(20, 30, 1))
-plt.ylim([20,30])
-zPos = np.array([x[2] for x in (wdList1[1:,7])])
-xPos = np.array([x[0] for x in (wdList1[1:,7])])
-xPosition, = plt.plot(xPos, zPos, '--k', label = "x") # x, 
-# y, = plt.plot(timeArray[1:], np.array([x[1] for x in (wdList1[1:,7])]), 'g', label = "y") # y
-# z, = plt.plot(timeArray[1:], np.array([x[2] for x in (wdList1[1:,7])]), 'b', label = "z") # z
-# plt.legend([x, y, z], ["x", "y", "z"])
-targetPos, = plt.plot(0, 25, '*b')
-plt.legend([xPosition, targetPos], ["UAV Position", "Desired Position"])
-plt.tight_layout()
-plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'XZposition.pdf')
-
-# Hinge Reaction torque
-# plt.figure(9, figsize=(10,3))
-# plt.plot(hingeReactionList[:,0], 'k')
-# plt.plot(hingeReactionList[:,1], 'r')
-# plt.plot(hingeReactionList[:,2], 'g')
-
-# Hinge torque
-plt.figure(11, figsize=(figWidth, figHeight))
-h0, = plt.plot(timeArray, hingeTorqueList[:,0], 'k', label = "h0")
-h1, = plt.plot(timeArray, hingeTorqueList[:,1], 'r', label = "h1")
-h2, = plt.plot(timeArray, hingeTorqueList[:,2], 'g', label = "h2")
-plt.legend([h0, h1, h2], ["Hinge 0", "Hinge 1", "Hinge 2"])
-plt.savefig('hingeTorque.pdf')
-plt.grid(True)
-plt.xlabel("Time[s]")
-plt.ylabel("Hinge Torque [Nm]")
-plt.xticks(np.arange(0, simTime+.1, 1)) 
-plt.yticks(np.arange(-30, 50, 10)) 
-plt.tight_layout()
-plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'hingeTorque.pdf')
-
-# Roll, pitch, yaw
+    ############# Power estimate model
+    plt.figure(3, figsize=(figWidth, figHeight))
+    plt.grid(True)
+    plt.xlabel("Time[s]")
+    plt.ylabel("Motor Power [W]")
+    plt.xticks(np.arange(0, simTime+.1, 1)) 
+    plt.yticks(np.arange(0, 1500.1, 150)) 
+    powerM0 = hf.power_required_mt2814(wList[:,3])
+    powerM1 = hf.power_required_mt2814(wList[:,0])
+    powerM2 = hf.power_required_mt2814(wList[:,1])
+    powerM3 = hf.power_required_mt2814(wList[:,2])
+    totalPower = powerM0 + powerM1 + powerM2 + powerM3
+    m0, = plt.plot(timeArray, powerM0, 'k', label = "m0")
+    m1, = plt.plot(timeArray, powerM1, 'r', label = "m1")
+    m2, = plt.plot(timeArray, powerM2, 'g', label = "m2")
+    m3, = plt.plot(timeArray, powerM3, 'b', label = "m3")
+    totalPower, = plt.plot(timeArray, totalPower, '--k', label = "totalPower")
+    plt.legend([m0, m1, m2, m3, totalPower], ["Motor 0, White Section", "Motor 1, Red Section", "Motor 2, Green Section", "Motor 3, Blue Section", "Total Power"])
+    plt.tight_layout()
+    plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'motorPower.pdf')
 
 
 
+    # alphar
+    plt.figure(4, figsize=(figWidth, figHeight))
+    # plt.title("alphar")
+    plt.grid(True)
+    plt.xlabel("Time[s]")
+    plt.ylabel("Force [N]")
+    plt.xticks(np.arange(0, simTime+.1, 1)) 
+    plt.yticks(np.arange(-100, 100, 20)) 
+    plt.ylim([-100,100])
+    wing0, = plt.plot(timeArray, np.array(wdList0[0:,0])*180/np.pi, 'k', label = "wing0")
+    wing1, = plt.plot(timeArray, np.array(wdList1[0:,0])*180/np.pi, 'r', label = "wing1")
+    wing2, = plt.plot(timeArray, np.array(wdList2[0:,0])*180/np.pi, 'g', label = "wing2")
+    wing3, = plt.plot(timeArray, np.array(wdList3[0:,0])*180/np.pi, 'b', label = "wing3")
+    plt.legend([wing0, wing1, wing2, wing3], ["Wing 0, White Section", "Wing 1, Red Section", "Wing 2, Green Section", "Wing 3, Blue Section"])
+    plt.tight_layout()
+    plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'alphar.pdf')
 
-plt.show()
+    # vNorm
+
+    plt.figure(5, figsize=(figWidth, figHeight))
+    # plt.title("vNorm")
+    plt.grid(True)
+    plt.xlabel("Time[s]")
+    plt.ylabel("Velocity [m/s]")
+    plt.xticks(np.arange(0, simTime+.1, 1)) 
+    plt.yticks(np.arange(0, 20, 2)) 
+    plt.ylim([0,20])
+    wing0, = plt.plot(timeArray, wdList0[0:,1], 'k', label = "wing0")
+    wing1, = plt.plot(timeArray, wdList1[0:,1], 'r', label = "wing1")
+    wing2, = plt.plot(timeArray, wdList2[0:,1], 'g', label = "wing2")
+    wing3, = plt.plot(timeArray, wdList3[0:,1], 'b', label = "wing3")
+    plt.legend([wing0, wing1, wing2, wing3], ["Wing 0, White Section", "Wing 1, Red Section", "Wing 2, Green Section", "Wing 3, Blue Section"])
+    plt.tight_layout()
+    plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'vNorm.pdf')
+
+    # Rel Fx
+    plt.figure(6, figsize=(figWidth, figHeight))
+    # plt.title("Fx")
+    plt.grid(True)
+    plt.xlabel("Time[s]")
+    plt.ylabel("Force Drag[N]")
+    plt.xticks(np.arange(0, simTime+.1, 1)) 
+    # plt.yticks(np.arange(0, 18, 2)) 
+    # plt.ylim([0,18])
+    plt.yticks(np.arange(0, 12, 2)) 
+    plt.ylim([0,12])
+    wing0, = plt.plot(timeArray, wdList0[0:,4], 'k', label = "wing0")
+    wing1, = plt.plot(timeArray, wdList1[0:,4], 'r', label = "wing1")
+    wing2, = plt.plot(timeArray, wdList2[0:,4], 'g', label = "wing2")
+    wing3, = plt.plot(timeArray, wdList3[0:,4], 'b', label = "wing3")
+    plt.legend([wing0, wing1, wing2, wing3], ["Wing 0, White Section", "Wing 1, Red Section", "Wing 2, Green Section", "Wing 3, Blue Section"])
+    plt.tight_layout()
+    plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'fx.pdf')
+
+
+    # Rel Fz
+    plt.figure(7, figsize=(figWidth, figHeight))
+    # plt.title("Fz")
+    plt.grid(True)
+    plt.xlabel("Time[s]")
+    plt.ylabel("Force Lift [N]")
+    plt.xticks(np.arange(0, simTime+.1, 1)) 
+    # plt.yticks(np.arange(0, 3.1, .5)) 
+    # plt.ylim([0,3])
+    plt.yticks(np.arange(0, 30, 5)) 
+    plt.ylim([0,30])
+    wing0, = plt.plot(timeArray, wdList0[0:,5], 'k', label = "wing0")
+    wing1, = plt.plot(timeArray, wdList1[0:,5], 'r', label = "wing1")
+    wing2, = plt.plot(timeArray, wdList2[0:,5], 'g', label = "wing2")
+    wing3, = plt.plot(timeArray, wdList3[0:,5], 'b', label = "wing3")
+    plt.legend([wing0, wing1, wing2, wing3], ["Wing 0, White Section", "Wing 1, Red Section", "Wing 2, Green Section", "Wing 3, Blue Section"])
+    plt.tight_layout()
+    plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'fz.pdf')
+
+    # orientationWing : Roll, pitch, yaw
+    plt.figure(8, figsize=(figWidth, figHeight))
+    plt.grid(True)
+    plt.xlabel("Time[s]")
+    plt.ylabel("Angle [deg]")
+    plt.xticks(np.arange(0, simTime+.1, 1)) 
+    plt.yticks(np.arange(-200, 200, 40)) 
+    plt.ylim([-200,200])
+    roll, = plt.plot(timeArray[1:], np.array([x[0] for x in (wdList1[1:,6])])*180/np.pi, 'r', label = "roll") # Roll, so pythonic
+    pitch, = plt.plot(timeArray[1:], np.array([x[1] for x in (wdList1[1:,6])])*180/np.pi, 'g', label = "pitch") # Pitch
+    yaw, = plt.plot(timeArray[1:], np.array([x[2] for x in (wdList1[1:,6])])*180/np.pi, 'b', label = "yaw") # Yaw
+    plt.legend([roll, pitch, yaw], ["Roll (Red Wing Section)", "Pitch (Red Wing Section)", "Yaw (Red Wing Section)"])
+    plt.tight_layout()
+    plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'rollPitchYaw.pdf')
+
+
+    # positionWing : x,y,z
+    plt.figure(9, figsize=(figWidth, figHeight))
+    plt.grid(True)
+    plt.xlabel("Time[s]")
+    plt.ylabel("Position [m]")
+    plt.xticks(np.arange(0, simTime+.1, 1)) 
+    plt.yticks(np.arange(-5, 200, 20)) 
+    plt.ylim([-5,200])
+    x, = plt.plot(timeArray[1:], np.array([x[0] for x in (wdList1[1:,7])]), 'r', label = "x") # x, 
+    y, = plt.plot(timeArray[1:], np.array([x[1] for x in (wdList1[1:,7])]), 'g', label = "y") # y
+    z, = plt.plot(timeArray[1:], np.array([x[2] for x in (wdList1[1:,7])]), 'b', label = "z") # z
+    plt.legend([x, y, z], ["x", "y", "z"])
+    plt.tight_layout()
+    plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'position.pdf')
+
+
+    plt.figure(10, figsize=(figWidth, figHeight))
+    plt.grid(True)
+    plt.xlabel("X [m]")
+    plt.ylabel("Z [m]")
+    # plt.xticks(np.arange(0, simTime+.1, 1)) 
+    plt.xticks(np.arange(-20, 10, 2)) 
+    plt.xlim([-20,10])
+    plt.yticks(np.arange(20, 30, 1))
+    plt.ylim([20,30])
+    zPos = np.array([x[2] for x in (wdList1[1:,7])])
+    xPos = np.array([x[0] for x in (wdList1[1:,7])])
+    xPosition, = plt.plot(xPos, zPos, '--k', label = "x") # x, 
+    # y, = plt.plot(timeArray[1:], np.array([x[1] for x in (wdList1[1:,7])]), 'g', label = "y") # y
+    # z, = plt.plot(timeArray[1:], np.array([x[2] for x in (wdList1[1:,7])]), 'b', label = "z") # z
+    # plt.legend([x, y, z], ["x", "y", "z"])
+    targetPos, = plt.plot(0, 25, '*b')
+    plt.legend([xPosition, targetPos], ["UAV Position", "Desired Position"])
+    plt.tight_layout()
+    plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'XZposition.pdf')
+
+    # Hinge Reaction torque
+    # plt.figure(9, figsize=(10,3))
+    # plt.plot(hingeReactionList[:,0], 'k')
+    # plt.plot(hingeReactionList[:,1], 'r')
+    # plt.plot(hingeReactionList[:,2], 'g')
+
+    # Hinge torque
+    plt.figure(11, figsize=(figWidth, figHeight))
+    h0, = plt.plot(timeArray, hingeTorqueList[:,0], 'k', label = "h0")
+    h1, = plt.plot(timeArray, hingeTorqueList[:,1], 'r', label = "h1")
+    h2, = plt.plot(timeArray, hingeTorqueList[:,2], 'g', label = "h2")
+    plt.legend([h0, h1, h2], ["Hinge 0", "Hinge 1", "Hinge 2"])
+    plt.savefig('hingeTorque.pdf')
+    plt.grid(True)
+    plt.xlabel("Time[s]")
+    plt.ylabel("Hinge Torque [Nm]")
+    plt.xticks(np.arange(0, simTime+.1, 1)) 
+    plt.yticks(np.arange(-30, 50, 10)) 
+    plt.tight_layout()
+    plt.savefig('../../simFigs/'+(os.path.basename(__file__)[:-3])+'hingeTorque.pdf')
+
+    # Roll, pitch, yaw
+
+
+
+
+    plt.show()
 # plt.savefig('figure1.pdf')
 
 
