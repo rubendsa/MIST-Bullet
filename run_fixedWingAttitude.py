@@ -51,8 +51,8 @@ for i in range(p.getNumJoints(robotId)):
 if __name__ == "__main__":
     simDelay = .01
     slowSim = False
-    timeStep = .001
-    ctrlTimeStep = .001 
+    timeStep = .01
+    ctrlTimeStep = .01 
 
     simTime = 10 # Sim time in [s]
     simSteps = int(simTime/timeStep)
