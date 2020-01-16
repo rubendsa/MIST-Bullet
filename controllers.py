@@ -150,10 +150,10 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
     
     u = np.concatenate((u1, u24))
 
-    geo = np.array([[Kf, Kf, Kf, Kf],
-                    [0, Kf*L, 0, -Kf*L],
-                    [-Kf*L, 0, Kf*L, 0],
-                    [Km, -Km, Km, -Km]])
+    # geo = np.array([[Kf, Kf, Kf, Kf],
+    #                 [0, Kf*L, 0, -Kf*L],
+    #                 [-Kf*L, 0, Kf*L, 0],
+    #                 [Km, -Km, Km, -Km]])
     # Below is the inverse of "geo" computed using the matlab symbolic package
     # geoTailSitterRaw = np.array([
     #     [ 1/(4*Kf),           0, -1/(2*Kf*L),  1/(4*Km)]
@@ -164,18 +164,26 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
     # Motor and elevon mixing when in a tailsitter state:
     # Motors down the rows, mixing across the columns [Throttle, roll, pitch, yaw]
     # geoTailSitter has zeros for the pitch and yaw because when in a tailsitter state, only the control surfaces are used for pitch and yaw.
-    geoTailSitter = np.array([
-        [ 1/(4*Kf), -1/(2*Kf*L),           0,   0],  
-        [ 1/(4*Kf),  1/(2*Kf*L),           0,   0],
-        [ 1/(4*Kf),  1/(2*Kf*L),           0,   0],
-        [ 1/(4*Kf), -1/(2*Kf*L),           0,   0]])
+    
+    #Frame state check:
+    if frameState == "fixedwing":
+        thetaHinge = 0
+    if frameState == "quadrotor":
+        thetaHinge = 1.57
 
-    # geoTailSitterCtrlSurf: used for computing elevon angles "e" from the general actuation effort "u" 
-    geoTailSitterCtrlSurf = np.array([
-        [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)],
-        [ 0,    0,    1/(2*Kf*L),     1/(4*Km)],
-        [ 0,    0,    1/(2*Kf*L),     1/(4*Km)],
-        [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)]])
+    geoTailSitterSin = np.array([
+        [1/(4*Kf), -1/(2*Kf*L)*math.cos(thetaHinge),  -1/(2*Kf*L)*math.sin(thetaHinge), 1/(4*Km)*math.sin(thetaHinge)],
+        [1/(4*Kf),                  1/(2*Kf*L),                            0, -1/(4*Km)*math.sin(thetaHinge)],
+        [1/(4*Kf), 1/(2*Kf*L)*math.cos(thetaHinge),  1/(2*Kf*L)*math.sin(thetaHinge), 1/(4*Km)*math.sin(thetaHinge)],
+        [1/(4*Kf),                  -1/(2*Kf*L),                            0, -1/(4*Km)*math.sin(thetaHinge)]])
+
+    # geoTailSitterCtrlSurfSin: used for computing elevon angles "e" from the general actuation effort "u" 
+    
+    geoTailSitterCtrlSurfSin = np.array([
+        [ 0,    0,    1/(2*Kf*L)*math.cos(thetaHinge),     -1/(4*Km)*math.cos(thetaHinge)],
+        [ 0,    0,    1/(2*Kf*L)*math.cos(thetaHinge),     1/(4*Km)*math.cos(thetaHinge)],
+        [ 0,    0,    1/(2*Kf*L)*math.cos(thetaHinge),     1/(4*Km)*math.cos(thetaHinge)],
+        [ 0,    0,    1/(2*Kf*L)*math.cos(thetaHinge),     -1/(4*Km)*math.cos(thetaHinge)]])
         
     # w2Limit = 63202500 #7950RPM
     w2Limit = 77440000 #8800RPM
@@ -186,24 +194,15 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
     
     e = 0,0,0,0
 
-    # if in a tailsitter state, recompute motor velocity and elevon angles as per geoTailSitter and geoTailSitterCtrlSurf geometry.
-    if frameState == "fixedwing":
-        tempStep = step
-        w2 = geoTailSitter @ u
-        w2 = np.clip(w2,0, w2Limit)
-        w = w2
-        e = geoTailSitterCtrlSurf @ u
-        eNorm = e / w2Limit
-        e = eNorm #Normalize the output because it was designed for propulsion system (omega^2, not elevon deflection)
-        e = np.clip(e, -.8, .8)
-
-    if frameState == "quadrotor":
-        w2 = LA.inv(geo) @ u
-        w2 = np.clip(w2, 0, w2Limit)
-        w = w2
-        e = np.array([[0],[0],[0],[0]])
-
-    
+    tempStep = step
+    w2 = geoTailSitterSin @ u
+    w2 = np.clip(w2,0, w2Limit)
+    w = w2
+    e = geoTailSitterCtrlSurfSin @ u
+    eNorm = e / w2Limit
+    e = eNorm #Normalize the output because it was designed for propulsion system (omega^2, not elevon deflection)
+    e = np.clip(e, -.8, .8)
+    print(math.cos(thetaHinge))
     # print("w:", w)
 
     return w,e
