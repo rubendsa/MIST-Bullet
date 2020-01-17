@@ -169,23 +169,23 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, eR_old
     
     #Frame state check:
     if frameState == "fixedwing":
-        thetaHinge = 0
+        thetaHinge = np.pi
     if frameState == "quadrotor":
-        thetaHinge = 1.57
+        thetaHinge = np.pi/2
 
     geoTailSitterSin = np.array([
-        [1/(4*Kf), -1/(2*Kf*L)*math.cos(thetaHinge),  -1/(2*Kf*L)*math.sin(thetaHinge), 1/(4*Km)*math.sin(thetaHinge)],
+        [1/(4*Kf), 1/(2*Kf*L)*math.cos(thetaHinge),  -1/(2*Kf*L)*math.sin(thetaHinge), 1/(4*Km)*math.sin(thetaHinge)],
         [1/(4*Kf),                  1/(2*Kf*L),                            0, -1/(4*Km)*math.sin(thetaHinge)],
-        [1/(4*Kf), 1/(2*Kf*L)*math.cos(thetaHinge),  1/(2*Kf*L)*math.sin(thetaHinge), 1/(4*Km)*math.sin(thetaHinge)],
+        [1/(4*Kf), -1/(2*Kf*L)*math.cos(thetaHinge),  1/(2*Kf*L)*math.sin(thetaHinge), 1/(4*Km)*math.sin(thetaHinge)],
         [1/(4*Kf),                  -1/(2*Kf*L),                            0, -1/(4*Km)*math.sin(thetaHinge)]])
 
     # geoTailSitterCtrlSurfSin: used for computing elevon angles "e" from the general actuation effort "u" 
     
     geoTailSitterCtrlSurfSin = np.array([
-        [ 0,    0,    1/(2*Kf*L)*math.cos(thetaHinge),     -1/(4*Km)*math.cos(thetaHinge)],
-        [ 0,    0,    1/(2*Kf*L)*math.cos(thetaHinge),     1/(4*Km)*math.cos(thetaHinge)],
-        [ 0,    0,    1/(2*Kf*L)*math.cos(thetaHinge),     1/(4*Km)*math.cos(thetaHinge)],
-        [ 0,    0,    1/(2*Kf*L)*math.cos(thetaHinge),     -1/(4*Km)*math.cos(thetaHinge)]])
+        [ 0,    0,    -1/(2*Kf*L)*math.cos(thetaHinge),     1/(4*Km)*math.cos(thetaHinge)],
+        [ 0,    0,    -1/(2*Kf*L)*math.cos(thetaHinge),     -1/(4*Km)*math.cos(thetaHinge)],
+        [ 0,    0,    -1/(2*Kf*L)*math.cos(thetaHinge),     -1/(4*Km)*math.cos(thetaHinge)],
+        [ 0,    0,    -1/(2*Kf*L)*math.cos(thetaHinge),     1/(4*Km)*math.cos(thetaHinge)]])
         
     w2Limit = 77440000 #8800RPM peak RPM -> w2 is angularvelocity^2 -> 8800^(2) =~ 77440000
 
