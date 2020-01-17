@@ -86,17 +86,15 @@ if __name__ == "__main__":
 
     motorValStored = np.array([[0,0,0,0]]).T
     elevonValStored = np.array([[0,0,0,0]]).T
-
-    # fm.applyAction([0, 0, 0, 0, .1, .1, .1, .1, 1.57, 1.57, 1.57], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
-            # fm.applyAction([0, 0, 0, 0, .1, .1, .1, .1, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
-            # fm.applyAction([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
-
+    eR_old = 0
+    error_position_old = 0
+    
     for i in range (simSteps): #Time to run simulation
         p.stepSimulation()
+        step = i
+
         if slowSim == True:
             time.sleep(simDelay)
-        
-        step = i
             
         if step in range(int(0/timeStep), int(5/timeStep)):
             hingeAngle = 1.57
@@ -111,7 +109,7 @@ if __name__ == "__main__":
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
             
             if step > (ctrlUpdateStep + ctrlStep):
-                w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "position") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+                w, e, eR_old, error_position_old = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, eR_old, error_position_old, ctrlMode = "position") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
                 motorValStored = w
                 elevonValStored = e
                 ctrlUpdateStep = step
@@ -131,7 +129,7 @@ if __name__ == "__main__":
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
             
             if step > (ctrlUpdateStep + ctrlStep):
-                w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "position") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+                w, e, eR_old, error_position_old = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, eR_old, error_position_old, ctrlMode = "position") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
                 motorValStored = w
                 elevonValStored = e
                 ctrlUpdateStep = step
