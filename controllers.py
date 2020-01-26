@@ -15,7 +15,7 @@ from numba import jit
 
 # Controllers for the UAV
 # @jit(nopython=True)
-def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode):
+def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, eR_old, error_position_old, ctrlMode):
 
     # Set Gains and Parameters TODO: Move this out
     # K_position = np.eye(3) * np.array([[30, 30, 100]]) # gain for x, y, z components of error vector
@@ -23,16 +23,15 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
 
     K_position = np.eye(3) * np.array([[6, 6, 20]]) # gain for x, y, z components of error vector
     K_velocity = np.eye(3) * np.array([[2, 2, 10]])
+    K_integral = np.eye(3) * np.array([[1, 1, 1]])
 
-    # K_rotation = np.eye(3) * np.array([[50, 50, 5]])
-    # K_angularVelocity = np.eye(3) * np.array([[40, 40, 5]])
     K_rotation = np.eye(3) * np.array([[30, 30, 30]])
     K_angularVelocity = np.eye(3) * np.array([[3, 3, 3]])
-    # K_rotation = np.eye(3) * np.array([[200, 200, 200]])
-    # K_angularVelocity = np.eye(3) * np.array([[100, 100, 100]])
+    K_rotation_integral = np.eye(3) * np.array([[1, 1, 1]])
 
     K_position = 1 * K_position
     K_velocity = 3 * K_velocity
+    K_integral = 1 * K_integral
     K_rotation = 4 * K_rotation
     K_angularVelocity = 5 * K_angularVelocity
 
@@ -88,8 +87,9 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
     # Compute position and velocity error
     error_position = np.array([positionW]) - np.array([des_positionW])
     error_velocity = np.array([velocityW]) - np.array([des_velocityW])
+    error_integral = np.clip((error_position + error_position_old), -1, 1)
 
-    des_F = -K_position @ error_position.T - K_velocity @ error_velocity.T + np.array([[0,0, mass * gravity]]).T #
+    des_F = -K_position @ error_position.T - K_velocity @ error_velocity.T + np.array([[0,0, mass * gravity]]).T - K_integral @ error_integral.T #
     # Compute u1 -> Force in world frame projected into the body z-axis
     zB = rotBtoW @ np.array([[0,0,1]]).T
     
@@ -143,17 +143,19 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
 
     eW = (LA.inv(rotBtoW) @ angularVelocityW.T - np.array([des_angular_velocityW]).T).T # Was this supposed to be in the Body frame?
 
-    u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T
+    eI = eR + eR_old
+
+    u24 = -K_rotation @ eR.T - K_angularVelocity @ eW.T - np.clip((K_rotation_integral @ eR.T), -100, 100)
     
     u1 = np.clip(u1, 0.0, 100.0)
     u24 = np.clip(u24, -120.0, 120.0)
     
     u = np.concatenate((u1, u24))
 
-    geo = np.array([[Kf, Kf, Kf, Kf],
-                    [0, Kf*L, 0, -Kf*L],
-                    [-Kf*L, 0, Kf*L, 0],
-                    [Km, -Km, Km, -Km]])
+    # geo = np.array([[Kf, Kf, Kf, Kf],
+    #                 [0, Kf*L, 0, -Kf*L],
+    #                 [-Kf*L, 0, Kf*L, 0],
+    #                 [Km, -Km, Km, -Km]])
     # Below is the inverse of "geo" computed using the matlab symbolic package
     # geoTailSitterRaw = np.array([
     #     [ 1/(4*Kf),           0, -1/(2*Kf*L),  1/(4*Km)]
@@ -164,47 +166,40 @@ def quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMo
     # Motor and elevon mixing when in a tailsitter state:
     # Motors down the rows, mixing across the columns [Throttle, roll, pitch, yaw]
     # geoTailSitter has zeros for the pitch and yaw because when in a tailsitter state, only the control surfaces are used for pitch and yaw.
-    geoTailSitter = np.array([
-        [ 1/(4*Kf), -1/(2*Kf*L),           0,   0],  
-        [ 1/(4*Kf),  1/(2*Kf*L),           0,   0],
-        [ 1/(4*Kf),  1/(2*Kf*L),           0,   0],
-        [ 1/(4*Kf), -1/(2*Kf*L),           0,   0]])
-
-    # geoTailSitterCtrlSurf: used for computing elevon angles "e" from the general actuation effort "u" 
-    geoTailSitterCtrlSurf = np.array([
-        [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)],
-        [ 0,    0,    1/(2*Kf*L),     1/(4*Km)],
-        [ 0,    0,    1/(2*Kf*L),     1/(4*Km)],
-        [ 0,    0,    1/(2*Kf*L),     -1/(4*Km)]])
-        
-    # w2Limit = 63202500 #7950RPM
-    w2Limit = 77440000 #8800RPM
-    # w2Limit = 147440000
-    w2 = LA.inv(geo) @ u
-    w2 = np.clip(w2,0, w2Limit) #8800 peak RPM -> w2 is angularvelocity^2 -> 8800^(2) =~ 77440000
-    w = w2
     
-    e = 0,0,0,0
-
-    # if in a tailsitter state, recompute motor velocity and elevon angles as per geoTailSitter and geoTailSitterCtrlSurf geometry.
+    #Frame state check:
     if frameState == "fixedwing":
-        tempStep = step
-        w2 = geoTailSitter @ u
-        w2 = np.clip(w2,0, w2Limit)
-        w = w2
-        e = geoTailSitterCtrlSurf @ u
-        eNorm = e / w2Limit
-        e = eNorm #Normalize the output because it was designed for propulsion system (omega^2, not elevon deflection)
-        e = np.clip(e, -.8, .8)
-
+        thetaHinge = np.pi
     if frameState == "quadrotor":
-        w2 = LA.inv(geo) @ u
-        w2 = np.clip(w2, 0, w2Limit)
-        w = w2
-        e = np.array([[0],[0],[0],[0]])
+        thetaHinge = np.pi/2
 
+    geoTailSitterSin = np.array([
+        [1/(4*Kf), 1/(2*Kf*L)*math.cos(thetaHinge),  -1/(2*Kf*L)*math.sin(thetaHinge), 1/(4*Km)*math.sin(thetaHinge)],
+        [1/(4*Kf),                  1/(2*Kf*L),                            0, -1/(4*Km)*math.sin(thetaHinge)],
+        [1/(4*Kf), -1/(2*Kf*L)*math.cos(thetaHinge),  1/(2*Kf*L)*math.sin(thetaHinge), 1/(4*Km)*math.sin(thetaHinge)],
+        [1/(4*Kf),                  -1/(2*Kf*L),                            0, -1/(4*Km)*math.sin(thetaHinge)]])
+
+    # geoTailSitterCtrlSurfSin: used for computing elevon angles "e" from the general actuation effort "u" 
     
+    geoTailSitterCtrlSurfSin = np.array([
+        [ 0,    0,    -1/(2*Kf*L)*math.cos(thetaHinge),     1/(4*Km)*math.cos(thetaHinge)],
+        [ 0,    0,    -1/(2*Kf*L)*math.cos(thetaHinge),     -1/(4*Km)*math.cos(thetaHinge)],
+        [ 0,    0,    -1/(2*Kf*L)*math.cos(thetaHinge),     -1/(4*Km)*math.cos(thetaHinge)],
+        [ 0,    0,    -1/(2*Kf*L)*math.cos(thetaHinge),     1/(4*Km)*math.cos(thetaHinge)]])
+        
+    w2Limit = 77440000 #8800RPM peak RPM -> w2 is angularvelocity^2 -> 8800^(2) =~ 77440000
+
+    tempStep = step
+    w2 = geoTailSitterSin @ u
+    w2 = np.clip(w2,0, w2Limit)
+    w = w2
+    e = geoTailSitterCtrlSurfSin @ u
+    eNorm = e / w2Limit
+    e = eNorm #Normalize the output because it was designed for propulsion system (omega^2, not elevon deflection)
+    e = np.clip(e, -.8, .8)
+    print("error_integral:", np.clip((K_integral @ error_integral.T),-10,10))
+    print("Rotational Integral Error:", np.clip((K_rotation_integral @ eR.T), -100, 100))
     # print("w:", w)
 
-    return w,e
+    return w,e, eR, error_integral
 
