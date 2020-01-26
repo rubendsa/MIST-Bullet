@@ -32,11 +32,12 @@ now = datetime.now()
 dateTime = now.strftime("_%d_%m_%Y_%H_%M_%S")
 savedFile = (os.path.basename(__file__)[:-3])+ dateTime + '.mp4'
 physicsClient = p.connect(p.GUI, options="--mp4=\"MultiRotorTailsitterMultiRotor.mp4\" --mp4fps==30")#or p.DIRECT for non-graphical version
-p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING, 1) # Forces frame sync
 
 # Initalization Code
 # physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0) # Removes the GUI text boxes
+p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING, 1) # Forces frame sync
+
 p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
 p.setGravity(0,0,-9.81)
 planeId = p.loadURDF("plane.urdf")	
@@ -216,6 +217,7 @@ if __name__ == "__main__":
     
         if i in range(1, 50000):
             hf.visualizeZoom(robotId, i, 0, 5000, 3, 3, -45, -30) 
+            p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING, 1) # Forces frame sync
 
         # if i in range(1, 1000):
         #     hf.visualizeZoom(robotId, i, 0, 500, 10, 2)
