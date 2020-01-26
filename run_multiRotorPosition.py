@@ -15,6 +15,9 @@ import record
 import helperFunctions as hf
 import sys
 import os
+from datetime import datetime
+import time
+import sys, os
 
 plotting = False
 
@@ -24,14 +27,22 @@ plotting = False
 # timeBeginPeriod(1) #new
 ########## END UNCOMMENT FOR WINDOWS ############
 
+
+# Enable Video frame-synced video recording
+now = datetime.now()
+dateTime = now.strftime("_%d_%m_%Y_%H_%M_%S")
+savedFile = (os.path.basename(__file__)[:-3])+ dateTime + '.mp4'
+physicsClient = p.connect(p.GUI, options="--mp4=\"MultiRotorPosition.mp4\" --mp4fps==30")#or p.DIRECT for non-graphical version
+p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING, 1) # Forces frame sync
+
 # Initalization Code
-physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
+# physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0) # Removes the GUI text boxes
-# physicsClient = p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
 p.setGravity(0,0,-9.81)
 planeId = p.loadURDF("plane.urdf")
-# p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "multiRotor_position.mp4")	
+
+
 
 # Load MIST-UAV
 robotStartPos = [0,0,1]
@@ -83,7 +94,8 @@ if __name__ == "__main__":
 
     motorValStored = np.array([[0,0,0,0]]).T
     elevonValStored = np.array([[0,0,0,0]]).T
-
+    eR_old = 0
+    error_position_old = 0
     # fm.applyAction([0, 0, 0, 0, .1, .1, .1, .1, 1.57, 1.57, 1.57], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
             # fm.applyAction([0, 0, 0, 0, .1, .1, .1, .1, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
             # fm.applyAction([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], robotId, hingeIds, ctrlSurfIds, propIds) #Example applyAction
@@ -168,7 +180,7 @@ if __name__ == "__main__":
             robotDesiredPoseWorld = des_positionW, des_orientationW, des_velocityW, des_angular_velocityW, des_yawW 
             
             if step > (ctrlUpdateStep + ctrlStep):
-                w, e = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, ctrlMode = "position") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
+                w, e, eR_old, error_position_old = ctrl.quadAttitudeControl(robotId, step, robotDesiredPoseWorld, frameState, eR_old, error_position_old, ctrlMode = "position") # starts with w1 instead of w0 to match the motor geometry of the UAV in the paper.  
 
                 # for m in range(0, len(w)):
                 #     clipThrottle = 1e7
