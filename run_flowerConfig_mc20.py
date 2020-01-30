@@ -35,7 +35,7 @@ now = datetime.now()
 dateTime = now.strftime("_%d_%m_%Y_%H_%M_%S")
 savedFile = (os.path.basename(__file__)[:-3])+ dateTime + '.mp4'
 
-physicsClient = p.connect(p.GUI, options="--mp4=\"flower_quad_1.mp4\" --mp4fps==30")#or p.DIRECT for non-graphical version
+physicsClient = p.connect(p.GUI, options="--mp4=\"flower_quad_1.mp4\" --mp4fps=30")#or p.DIRECT for non-graphical version
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0) # Removes the GUI text boxes
 p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING, 1) # Removes the GUI text boxes
 # physicsClient = p.connect(p.DIRECT)

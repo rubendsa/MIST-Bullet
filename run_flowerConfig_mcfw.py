@@ -28,7 +28,7 @@ plotting = True
 # physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
 # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0) # Removes the GUI text boxes
 # physicsClient = p.connect(p.DIRECT)
-physicsClient = p.connect(p.GUI, options="--mp4=\"flower_quad_2.mp4\" --mp4fps==30")#or p.DIRECT for non-graphical version
+physicsClient = p.connect(p.GUI, options="--mp4=\"flower_quad_2.mp4\" --mp4fps=30")#or p.DIRECT for non-graphical version
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0) # Removes the GUI text boxes
 p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING, 1) # Removes the GUI text boxes
 

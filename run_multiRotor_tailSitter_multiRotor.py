@@ -31,7 +31,7 @@ plotting = False
 now = datetime.now()
 dateTime = now.strftime("_%d_%m_%Y_%H_%M_%S")
 savedFile = (os.path.basename(__file__)[:-3])+ dateTime + '.mp4'
-physicsClient = p.connect(p.GUI, options="--mp4=\"MultiRotorTailsitterMultiRotor.mp4\" --mp4fps==30")#or p.DIRECT for non-graphical version
+physicsClient = p.connect(p.GUI, options="--mp4=\"MultiRotorTailsitterMultiRotor_final.mp4\" --mp4fps=30")#or p.DIRECT for non-graphical version
 
 # Initalization Code
 # physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
